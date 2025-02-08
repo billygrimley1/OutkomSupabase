@@ -1,4 +1,6 @@
+// src/components/CustomFieldsManager.js
 import React, { useState, useEffect } from "react";
+import { supabase } from "../utils/supabase";
 import "../styles/CustomFieldsManager.css";
 
 const CustomFieldsManager = () => {
@@ -10,31 +12,53 @@ const CustomFieldsManager = () => {
   });
 
   useEffect(() => {
-    const stored = localStorage.getItem("customFields");
-    if (stored) {
-      setFields(JSON.parse(stored));
+    async function fetchCustomFields() {
+      const { data, error } = await supabase
+        .from("custom_field_definitions")
+        .select();
+      if (error) {
+        console.error("Error fetching custom fields:", error.message);
+      } else {
+        setFields(data);
+      }
     }
+    fetchCustomFields();
   }, []);
 
   const handleNewFieldChange = (e) => {
     setNewField({ ...newField, [e.target.name]: e.target.value });
   };
 
-  const addField = () => {
+  const addField = async () => {
     if (newField.label && newField.name) {
-      const updatedFields = [...fields, newField];
-      setFields(updatedFields);
-      localStorage.setItem("customFields", JSON.stringify(updatedFields));
-      setNewField({ label: "", name: "", type: "text" });
+      const { data, error } = await supabase
+        .from("custom_field_definitions")
+        .insert({
+          label: newField.label,
+          name: newField.name,
+          field_type: newField.type,
+        });
+      if (error) {
+        alert("Error adding field: " + error.message);
+      } else {
+        setFields([...fields, ...data]);
+        setNewField({ label: "", name: "", type: "text" });
+      }
     } else {
       alert("Please provide both label and name for the custom field.");
     }
   };
 
-  const removeField = (name) => {
-    const updatedFields = fields.filter((field) => field.name !== name);
-    setFields(updatedFields);
-    localStorage.setItem("customFields", JSON.stringify(updatedFields));
+  const removeField = async (name) => {
+    const { error } = await supabase
+      .from("custom_field_definitions")
+      .delete()
+      .eq("name", name);
+    if (error) {
+      alert("Error removing field: " + error.message);
+    } else {
+      setFields(fields.filter((field) => field.name !== name));
+    }
   };
 
   return (
@@ -79,7 +103,7 @@ const CustomFieldsManager = () => {
           {fields.map((field, idx) => (
             <li key={idx}>
               <span>
-                {field.label} ({field.name}) - {field.type}
+                {field.label} ({field.name}) - {field.field_type}
               </span>
               <button onClick={() => removeField(field.name)}>Remove</button>
             </li>

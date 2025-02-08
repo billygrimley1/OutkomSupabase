@@ -1,5 +1,4 @@
 // src/components/TaskTemplateModal.js
-
 import React, { useState } from "react";
 import "../styles/TaskTemplateModal.css";
 
@@ -8,7 +7,7 @@ const defaultTemplates = [
     id: "template-1",
     name: "Onboarding Checklist",
     title: "Onboarding: New Client",
-    dueDate: "", // User can fill in after creation
+    dueDate: "",
     priority: "High",
     assignedTo: ["Alice"],
     relatedCustomer: "",
@@ -17,8 +16,8 @@ const defaultTemplates = [
     subtasks: [
       { id: "subtask-1", text: "Send Welcome Email", completed: false },
       { id: "subtask-2", text: "Set Up Account", completed: false },
-      { id: "subtask-3", text: "Schedule Kickoff Meeting", completed: false }
-    ]
+      { id: "subtask-3", text: "Schedule Kickoff Meeting", completed: false },
+    ],
   },
   {
     id: "template-2",
@@ -32,13 +31,15 @@ const defaultTemplates = [
     tags: ["Review"],
     subtasks: [
       { id: "subtask-1", text: "Prepare Report", completed: false },
-      { id: "subtask-2", text: "Conduct Review Call", completed: false }
-    ]
-  }
+      { id: "subtask-2", text: "Conduct Review Call", completed: false },
+    ],
+  },
 ];
 
 const TaskTemplateModal = ({ onClose, onApplyTemplate }) => {
-  const [selectedTemplateId, setSelectedTemplateId] = useState(defaultTemplates[0].id);
+  const [selectedTemplateId, setSelectedTemplateId] = useState(
+    defaultTemplates[0].id
+  );
 
   const handleApply = () => {
     const template = defaultTemplates.find((t) => t.id === selectedTemplateId);

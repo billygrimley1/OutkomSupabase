@@ -1,8 +1,10 @@
+// src/components/CustomerForm.js
 import React, { useState, useEffect } from "react";
+import { supabase } from "../utils/supabase";
 import "../styles/CustomerForm.css";
 
 const CustomerForm = () => {
-  // Standard customer fields
+  // Standard customer fields (in camelCase on the client)
   const [formData, setFormData] = useState({
     name: "",
     ARR: "",
@@ -37,31 +39,70 @@ const CustomerForm = () => {
     setFormData({ ...formData, [fieldName]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Submitted customer:", formData);
-    alert("Customer added (prototype)");
-    setFormData({
-      name: "",
-      ARR: "",
-      healthRank: "",
-      contractStart: "",
-      renewalDate: "",
-      lastLogin: "",
-      productUsage: "",
-      numberOfUsers: "",
-      mainContact: "",
-      mainContactEmail: "",
-      status: "",
-      CSM: "",
-      riskStatus: "",
+
+    // Construct a new customer object matching the DB column names.
+    const newCustomer = {
+      name: formData.name,
+      arr: parseFloat(formData.ARR),
+      health_rank: formData.healthRank,
+      contract_start_date: formData.contractStart, // ideally convert from DD/MM/YYYY to YYYY-MM-DD
+      renewal_date: formData.renewalDate,
+      last_login: formData.lastLogin,
+      product_usage: formData.productUsage
+        ? parseFloat(formData.productUsage)
+        : null,
+      number_of_users: formData.numberOfUsers
+        ? parseInt(formData.numberOfUsers, 10)
+        : null,
+      main_contact: formData.mainContact,
+      main_contact_email: formData.mainContactEmail,
+      status: formData.status,
+      csm: formData.CSM,
+      risk_status: formData.riskStatus,
+      custom_data: {}, // Start with an empty object for custom fields
+    };
+
+    // Merge in any custom fields
+    customFields.forEach((field) => {
+      newCustomer.custom_data[field.name] = formData[field.name] || null;
     });
+
+    // Insert the new customer into the database
+    const { data, error } = await supabase
+      .from("customers")
+      .insert(newCustomer);
+
+    if (error) {
+      console.error("Error adding customer:", error.message);
+      alert("Error adding customer: " + error.message);
+    } else {
+      alert("Customer added successfully!");
+      // Reset the form
+      setFormData({
+        name: "",
+        ARR: "",
+        healthRank: "",
+        contractStart: "",
+        renewalDate: "",
+        lastLogin: "",
+        productUsage: "",
+        numberOfUsers: "",
+        mainContact: "",
+        mainContactEmail: "",
+        status: "",
+        CSM: "",
+        riskStatus: "",
+      });
+    }
   };
 
   return (
     <div className="customer-form-container">
       <h2>Add New Customer</h2>
       <form onSubmit={handleSubmit}>
+        {/* Standard field inputs … */}
         <label>
           Name:
           <input
@@ -97,7 +138,7 @@ const CustomerForm = () => {
           <input
             type="text"
             name="contractStart"
-            placeholder="DD/MM/YYYY"
+            placeholder="YYYY-MM-DD"
             value={formData.contractStart}
             onChange={handleChange}
           />
@@ -107,7 +148,7 @@ const CustomerForm = () => {
           <input
             type="text"
             name="renewalDate"
-            placeholder="DD/MM/YYYY"
+            placeholder="YYYY-MM-DD"
             value={formData.renewalDate}
             onChange={handleChange}
           />
@@ -117,7 +158,7 @@ const CustomerForm = () => {
           <input
             type="text"
             name="lastLogin"
-            placeholder="DD/MM/YYYY"
+            placeholder="YYYY-MM-DD"
             value={formData.lastLogin}
             onChange={handleChange}
           />
@@ -189,15 +230,14 @@ const CustomerForm = () => {
         {customFields.map((field, idx) => (
           <label key={idx}>
             {field.label}:
-            {field.type === "text" && (
+            {field.type === "text" ? (
               <input
                 type="text"
                 name={field.name}
                 value={formData[field.name] || ""}
                 onChange={(e) => handleCustomChange(e, field.name)}
               />
-            )}
-            {field.type === "number" && (
+            ) : (
               <input
                 type="number"
                 name={field.name}

@@ -1,15 +1,15 @@
 // src/components/TopBar.js
-
 import React from "react";
 import { FaPlus, FaFilter, FaClone, FaSlidersH } from "react-icons/fa";
 import "../styles/TopBar.css";
 
-const TopBar = ({ setView, currentView }) => {
+const TopBar = ({ setView, currentView, onAddTask }) => {
   const handleAdd = () => {
     if (currentView === "workflows") {
-      alert("Add new customer record (prototype)");
+      alert("Add new customer record (supabase integration prototype)");
     } else if (currentView === "actions") {
-      alert("Add new task (prototype)");
+      // Instead of an alert, call the onAddTask callback.
+      onAddTask();
     }
   };
 

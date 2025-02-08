@@ -1,3 +1,4 @@
+// src/components/LeftNav.js
 import React from "react";
 import {
   FaProjectDiagram,
@@ -14,7 +15,7 @@ const LeftNav = ({ setView, currentView }) => {
     <div className="left-nav">
       <div className="nav-logo">
         <img
-          src="https://img1.wsimg.com/isteam/ip/de9689e2-bb99-4fce-8adb-f427be1de7cb/blob-43f47c0.png/:/rs=w:200,h:200,cg:true,m/cr=w:200,h:200/qt=q:95"
+          src="https://img1.wsimg.com/isteam/ip/de9689e2-bb99-4fce-8adb-f427be1de7cb/blob-43f47c0.png"
           alt="Outkom Logo"
         />
       </div>

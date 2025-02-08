@@ -1,5 +1,4 @@
 // src/components/KanbanColumn.js
-
 import React, { useState } from "react";
 import { Droppable } from "react-beautiful-dnd";
 import Card from "./Card";
@@ -8,13 +7,14 @@ const KanbanColumn = ({ column, cards, updateColumn }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState(column.title);
   const [automationTrigger, setAutomationTrigger] = useState(
-    column.automationTrigger
+    column.automationTrigger || false
   );
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setIsEditing(false);
-    // Update the column with new title and automation setting
-    updateColumn(column.id, { ...column, title, automationTrigger });
+    const updatedColumn = { ...column, title, automationTrigger };
+    updateColumn(column.id, updatedColumn);
+    // If needed, update the column record in Supabase here.
   };
 
   return (
@@ -54,7 +54,7 @@ const KanbanColumn = ({ column, cards, updateColumn }) => {
           <h3>{title}</h3>
         )}
       </div>
-      <Droppable droppableId={column.id}>
+      <Droppable droppableId={String(column.id)}>
         {(provided) => (
           <div
             className="card-list"

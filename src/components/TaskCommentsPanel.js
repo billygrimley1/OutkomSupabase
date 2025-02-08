@@ -1,14 +1,13 @@
 // src/components/TaskCommentsPanel.js
-
 import React, { useState } from "react";
 import "../styles/TaskCommentsPanel.css";
 
 const TaskCommentsPanel = ({ task, onClose, onAddComment }) => {
   const [commentInput, setCommentInput] = useState("");
 
-  const handleAddComment = () => {
+  const handleAddComment = async () => {
     if (commentInput.trim() !== "") {
-      onAddComment(commentInput);
+      await onAddComment(commentInput);
       setCommentInput("");
     }
   };

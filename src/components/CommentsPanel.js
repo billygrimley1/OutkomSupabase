@@ -1,15 +1,24 @@
 // src/components/CommentsPanel.js
-
 import React, { useState } from "react";
+import { supabase } from "../utils/supabase";
 import "../styles/CommentsPanel.css";
 
 const CommentsPanel = ({ card, onClose }) => {
-  const [comments, setComments] = useState([]);
+  const [comments, setComments] = useState(card.comments || []);
   const [input, setInput] = useState("");
 
-  const addComment = () => {
+  const addComment = async () => {
     if (input.trim() !== "") {
-      setComments([...comments, input]);
+      const newComments = [...comments, input];
+      const { error } = await supabase
+        .from("customers")
+        .update({ comments: newComments })
+        .eq("id", card.id);
+      if (error) {
+        console.error("Error updating comments:", error.message);
+      } else {
+        setComments(newComments);
+      }
       setInput("");
     }
   };

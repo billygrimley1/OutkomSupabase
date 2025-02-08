@@ -1,11 +1,10 @@
 // src/components/Card.js
-
 import React, { useState } from "react";
 import { Draggable } from "react-beautiful-dnd";
 import CommentsPanel from "./CommentsPanel";
 import "../styles/Card.css";
 
-// Helper function to choose a border color based on risk level.
+// Helper to choose a border color based on risk level.
 const getRiskColor = (riskStatus) => {
   if (riskStatus === "High") return "#FF0000"; // Red for High risk
   if (riskStatus === "Medium") return "#FFA500"; // Orange for Medium risk
@@ -19,7 +18,7 @@ const Card = ({ card, index }) => {
 
   return (
     <>
-      <Draggable draggableId={card.id} index={index}>
+      <Draggable draggableId={String(card.id)} index={index}>
         {(provided) => (
           <div
             className="kanban-card"

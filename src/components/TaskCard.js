@@ -1,5 +1,4 @@
 // src/components/TaskCard.js
-
 import React, { useState } from "react";
 import { Draggable } from "react-beautiful-dnd";
 import TaskCommentsPanel from "./TaskCommentsPanel";
@@ -15,6 +14,10 @@ const getPriorityColor = (priority, topPriority, isCompletedColumn) => {
 };
 
 const TaskCard = ({ task, index, updateTask, isCompletedColumn }) => {
+  // Use fallback empty arrays if assignedTo or tags are undefined.
+  const initialAssignedTo = (task.assignedTo || []).join(", ");
+  const initialTags = (task.tags || []).join(", ");
+
   const [expanded, setExpanded] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [showComments, setShowComments] = useState(false);
@@ -22,18 +25,21 @@ const TaskCard = ({ task, index, updateTask, isCompletedColumn }) => {
     title: task.title,
     dueDate: task.dueDate,
     priority: task.priority,
-    assignedTo: task.assignedTo.join(", "),
+    assignedTo: initialAssignedTo,
     relatedCustomer: task.relatedCustomer || "",
-    tags: task.tags.join(", ")
+    tags: initialTags,
   });
 
   // Calculate subtask progress.
   const totalSubtasks = task.subtasks ? task.subtasks.length : 0;
-  const completedSubtasks = task.subtasks ? task.subtasks.filter((st) => st.completed).length : 0;
-  const progressPercentage = totalSubtasks > 0 ? Math.round((completedSubtasks / totalSubtasks) * 100) : 0;
+  const completedSubtasks = task.subtasks
+    ? task.subtasks.filter((st) => st.completed).length
+    : 0;
+  const progressPercentage =
+    totalSubtasks > 0 ? Math.round((completedSubtasks / totalSubtasks) * 100) : 0;
 
   const handleToggleSubtask = (subtaskId) => {
-    const updatedSubtasks = task.subtasks.map((st) =>
+    const updatedSubtasks = (task.subtasks || []).map((st) =>
       st.id === subtaskId ? { ...st, completed: !st.completed } : st
     );
     const updatedTask = { ...task, subtasks: updatedSubtasks };
@@ -44,23 +50,27 @@ const TaskCard = ({ task, index, updateTask, isCompletedColumn }) => {
     setEditedTask({ ...editedTask, [field]: value });
   };
 
-  const saveEdits = () => {
+  const saveEdits = async () => {
     const updatedTask = {
       ...task,
       title: editedTask.title,
       dueDate: editedTask.dueDate,
       priority: editedTask.priority,
-      assignedTo: editedTask.assignedTo.split(",").map((s) => s.trim()),
+      assignedTo: editedTask.assignedTo
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean),
       relatedCustomer: editedTask.relatedCustomer,
-      tags: editedTask.tags.split(",").map((s) => s.trim())
+      tags: editedTask.tags.split(",").map((s) => s.trim()).filter(Boolean),
     };
     updateTask(updatedTask);
+    // Optionally, update in database here if you have a helper like updateTaskInDB(updatedTask)
     setEditMode(false);
   };
 
   return (
     <>
-      <Draggable draggableId={task.id} index={index}>
+      <Draggable draggableId={String(task.id)} index={index}>
         {(provided) => (
           <div
             className={`task-card ${task.topPriority ? "top-priority" : ""}`}
@@ -74,7 +84,11 @@ const TaskCard = ({ task, index, updateTask, isCompletedColumn }) => {
             }}
             style={{
               ...provided.draggableProps.style,
-              borderLeft: `5px solid ${getPriorityColor(task.priority, task.topPriority, isCompletedColumn)}`
+              borderLeft: `5px solid ${getPriorityColor(
+                task.priority,
+                task.topPriority,
+                isCompletedColumn
+              )}`,
             }}
           >
             <div className="task-card-main">
@@ -122,21 +136,32 @@ const TaskCard = ({ task, index, updateTask, isCompletedColumn }) => {
                     placeholder="Tags (comma separated)"
                     className="editable-input"
                   />
-                  <button onClick={saveEdits} className="save-button">Save</button>
+                  <button onClick={saveEdits} className="save-button">
+                    Save
+                  </button>
                 </>
               ) : (
                 <>
-                  <h4>
-                    {task.title}{" "}
-                    {task.topPriority && !isCompletedColumn && (
-                      <span className="top-indicator">⭐ Top</span>
-                    )}
-                  </h4>
-                  <p><strong>Due:</strong> {task.dueDate}</p>
-                  <p><strong>Priority:</strong> {task.priority}</p>
-                  <p><strong>Assigned:</strong> {task.assignedTo.join(", ")}</p>
-                  {task.relatedCustomer && <p><strong>Customer:</strong> {task.relatedCustomer}</p>}
-                  {task.tags && task.tags.length > 0 && <p><strong>Tags:</strong> {task.tags.join(", ")}</p>}
+                  <h4>{task.title}</h4>
+                  <p>
+                    <strong>Due:</strong> {task.dueDate}
+                  </p>
+                  <p>
+                    <strong>Priority:</strong> {task.priority}
+                  </p>
+                  <p>
+                    <strong>Assigned:</strong>{" "}
+                    {(task.assignedTo || []).join(", ")}
+                  </p>
+                  {task.relatedCustomer && (
+                    <p>
+                      <strong>Customer:</strong> {task.relatedCustomer}
+                    </p>
+                  )}
+                  <p>
+                    <strong>Tags:</strong>{" "}
+                    {(task.tags || []).join(", ")}
+                  </p>
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -155,7 +180,7 @@ const TaskCard = ({ task, index, updateTask, isCompletedColumn }) => {
                   <h5>Subtasks</h5>
                   {totalSubtasks > 0 ? (
                     <ul>
-                      {task.subtasks.map((st) => (
+                      {(task.subtasks || []).map((st) => (
                         <li
                           key={st.id}
                           className={st.completed ? "completed" : ""}
@@ -177,7 +202,7 @@ const TaskCard = ({ task, index, updateTask, isCompletedColumn }) => {
                         className="progress-fill"
                         style={{
                           background: isCompletedColumn ? "#32CD32" : "#ffd700",
-                          width: `${progressPercentage}%`
+                          width: `${progressPercentage}%`,
                         }}
                       >
                         {progressPercentage}%
@@ -191,17 +216,7 @@ const TaskCard = ({ task, index, updateTask, isCompletedColumn }) => {
         )}
       </Draggable>
       {showComments && (
-        <TaskCommentsPanel
-          task={task}
-          onClose={() => setShowComments(false)}
-          onAddComment={(newComment) => {
-            const updatedTask = {
-              ...task,
-              comments: task.comments ? [...task.comments, newComment] : [newComment]
-            };
-            updateTask(updatedTask);
-          }}
-        />
+        <TaskCommentsPanel task={task} onClose={() => setShowComments(false)} />
       )}
     </>
   );

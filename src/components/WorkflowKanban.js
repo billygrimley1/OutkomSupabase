@@ -1,9 +1,10 @@
 // src/components/WorkflowKanban.js
-
 import React, { useState, useEffect } from "react";
 import { DragDropContext } from "react-beautiful-dnd";
 import KanbanColumn from "./KanbanColumn";
 import "../styles/Kanban.css";
+import { supabase } from "../utils/supabase";
+import ReactConfetti from "react-confetti";
 
 // ------------------------------
 // Default columns for Workflow Kanban
@@ -54,7 +55,7 @@ const defaultColumns = {
 };
 
 // ------------------------------
-// Generate 30 test customer records
+// Generate test customer records.
 // ------------------------------
 const generateTestCustomers = () => {
   const riskLevels = ["Low", "Medium", "High"];
@@ -77,17 +78,18 @@ const generateTestCustomers = () => {
       name,
       riskStatus: risk,
       healthRank: risk === "Low" ? "A" : risk === "Medium" ? "B" : "C",
-      renewalDate: `15/0${Math.floor(Math.random() * 9) + 1}/2025`,
+      renewalDate: `2025-0${Math.floor(Math.random() * 9) + 1}-15`,
       CSM: csm,
       ARR: Math.floor(Math.random() * 100000) + 10000,
       usage: `${Math.floor(Math.random() * 100)}%`,
-      lastContact: `0${Math.floor(Math.random() * 9) + 1}/10/2025`,
+      lastContact: `2025-10-0${Math.floor(Math.random() * 9) + 1}`,
       tags:
         risk === "High"
           ? ["Urgent", "At Risk"]
           : risk === "Low"
           ? ["Healthy"]
           : ["Monitor"],
+      status: "Leads",
     };
   }
   return customers;
@@ -114,24 +116,18 @@ const initialBoards = {
   "board-1": initializeBoard(),
 };
 
-// ------------------------------
-// WorkflowKanban Component
-// ------------------------------
 const WorkflowKanban = () => {
   const [boards, setBoards] = useState(initialBoards);
   const [currentBoardId, setCurrentBoardId] = useState("board-1");
-  // Basic filter state for workflow kanban.
   const [filter, setFilter] = useState({ CSM: "", riskStatus: "", tag: "" });
-  // Advanced filter state (if needed).
   const [advancedFilter, setAdvancedFilter] = useState({
     dueFrom: "",
     dueTo: "",
   });
-  // Toggle for showing advanced filters.
   const [showFilters, setShowFilters] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
   const currentBoard = boards[currentBoardId];
 
-  // Load saved filter settings from localStorage.
   useEffect(() => {
     const savedFilter = localStorage.getItem("savedFilter");
     if (savedFilter) {
@@ -139,7 +135,7 @@ const WorkflowKanban = () => {
     }
   }, []);
 
-  const onDragEnd = (result) => {
+  const onDragEnd = async (result) => {
     const { destination, source, draggableId } = result;
     if (!destination) return;
     if (
@@ -150,8 +146,6 @@ const WorkflowKanban = () => {
 
     const startColumn = currentBoard.columns[source.droppableId];
     const finishColumn = currentBoard.columns[destination.droppableId];
-
-    // Update customer status based on destination column title.
     const customer = currentBoard.customers[draggableId];
     if (customer) {
       customer.status = finishColumn.title;
@@ -184,34 +178,36 @@ const WorkflowKanban = () => {
         },
       });
 
-      // Check if the card was dropped into the "Adopting" column.
+      // If dropped into "Adopting", show confetti.
       if (finishColumn.title.toLowerCase() === "adopting") {
-        // Trigger the fireworks (confetti) animation.
-        confetti({
-          particleCount: 100,
-          spread: 70,
-          origin: { y: 0.6 },
-        });
+        setShowConfetti(true);
+        setTimeout(() => {
+          setShowConfetti(false);
+        }, 3000);
       }
+    }
+
+    const { error } = await supabase
+      .from("customers")
+      .update({ status: customer.status })
+      .eq("id", customer.id);
+    if (error) {
+      console.error("Error updating customer status:", error.message);
     }
   };
 
-  // Helper: update the current board.
   const updateBoard = (newBoard) => {
     setBoards({ ...boards, [currentBoardId]: newBoard });
   };
 
-  // Filtering: only include a customer if they match all criteria.
   const getFilteredCustomer = (customer) => {
     if (filter.CSM && customer.CSM !== filter.CSM) return false;
     if (filter.riskStatus && customer.riskStatus !== filter.riskStatus)
       return false;
     if (filter.tag && !customer.tags.includes(filter.tag)) return false;
-    // You can add advanced filter conditions here if needed.
     return true;
   };
 
-  // Board management functions.
   const cloneBoard = () => {
     const newBoardId = `board-${Object.keys(boards).length + 1}`;
     const newBoard = {
@@ -243,7 +239,7 @@ const WorkflowKanban = () => {
 
   return (
     <div className="kanban-container">
-      {/* Grouped Board Controls */}
+      {showConfetti && <ReactConfetti numberOfPieces={200} />}
       <div className="board-controls">
         <div className="board-management">
           <label>
@@ -338,16 +334,13 @@ const WorkflowKanban = () => {
           <button onClick={createNewBoard}>New Board</button>
         </div>
       </div>
-
-      {/* Kanban Board */}
       <DragDropContext onDragEnd={onDragEnd}>
         <div className="kanban-board">
           {Object.keys(currentBoard.columns).map((columnId) => {
             const column = currentBoard.columns[columnId];
             const cards = column.cardIds
               .map((cardId) => currentBoard.customers[cardId])
-              .filter(getFilteredCustomer)
-              .sort((a, b) => b.ARR - a.ARR);
+              .filter(getFilteredCustomer);
             return (
               <KanbanColumn key={column.id} column={column} cards={cards} />
             );

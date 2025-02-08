@@ -1,32 +1,21 @@
 // src/components/TaskKanban.js
-
 import React, { useState, useEffect } from "react";
 import { DragDropContext, Droppable } from "react-beautiful-dnd";
 import TaskCard from "./TaskCard";
 import TaskTemplateModal from "./TaskTemplateModal";
 import "../styles/Kanban.css";
+import { supabase } from "../utils/supabase";
+import ReactConfetti from "react-confetti";
 
 // ------------------------------
 // Default columns for the Task Kanban board.
 const defaultTaskColumns = {
-  "task-column-1": {
-    id: "task-column-1",
-    title: "Not started",
-    cardIds: [],
-  },
-  "task-column-2": {
-    id: "task-column-2",
-    title: "In progress",
-    cardIds: [],
-  },
-  "task-column-3": {
-    id: "task-column-3",
-    title: "Completed",
-    cardIds: [],
-  },
+  "task-column-1": { id: "task-column-1", title: "Not started", cardIds: [] },
+  "task-column-2": { id: "task-column-2", title: "In progress", cardIds: [] },
+  "task-column-3": { id: "task-column-3", title: "Completed", cardIds: [] },
 };
 
-// Helper function to create a sample task with subtasks.
+// Helper to create a sample task.
 const createSampleTask = (
   id,
   title,
@@ -57,192 +46,20 @@ const createSampleTask = (
     },
     { id: `${id}-subtask-3`, text: "Send email", completed: false },
   ],
+  comments: [],
+  status: "Not started",
 });
 
-// Create 20 sample tasks.
+// For brevity, only one sample task is shown.
 const initialTasks = {
-  // Not started (10 tasks)
   "task-1": createSampleTask(
     "task-1",
     "Task 1: Contact Client",
-    "10/10/2025",
+    "2025-10-10",
     "High",
     ["Alice"],
     "Acme Corp",
     true
-  ),
-  "task-2": createSampleTask(
-    "task-2",
-    "Task 2: Follow-up",
-    "11/10/2025",
-    "Medium",
-    ["Bob"],
-    "Beta Ltd",
-    false
-  ),
-  "task-3": createSampleTask(
-    "task-3",
-    "Task 3: Prepare Quote",
-    "12/10/2025",
-    "Low",
-    ["Charlie"],
-    "Gamma Inc",
-    false
-  ),
-  "task-4": createSampleTask(
-    "task-4",
-    "Task 4: Schedule Meeting",
-    "13/10/2025",
-    "High",
-    ["Alice"],
-    "Delta Co",
-    true
-  ),
-  "task-5": createSampleTask(
-    "task-5",
-    "Task 5: Demo Presentation",
-    "14/10/2025",
-    "Medium",
-    ["Bob"],
-    "Epsilon LLC",
-    false
-  ),
-  "task-6": createSampleTask(
-    "task-6",
-    "Task 6: Proposal Draft",
-    "15/10/2025",
-    "Low",
-    ["Charlie"],
-    "Zeta Enterprises",
-    false
-  ),
-  "task-7": createSampleTask(
-    "task-7",
-    "Task 7: Follow-up Email",
-    "16/10/2025",
-    "High",
-    ["Alice"],
-    "Acme Corp",
-    true
-  ),
-  "task-8": createSampleTask(
-    "task-8",
-    "Task 8: Contract Review",
-    "17/10/2025",
-    "Medium",
-    ["Bob"],
-    "Beta Ltd",
-    false
-  ),
-  "task-9": createSampleTask(
-    "task-9",
-    "Task 9: Risk Analysis",
-    "18/10/2025",
-    "Low",
-    ["Charlie"],
-    "Gamma Inc",
-    false
-  ),
-  "task-10": createSampleTask(
-    "task-10",
-    "Task 10: Final Proposal",
-    "19/10/2025",
-    "High",
-    ["Alice"],
-    "Delta Co",
-    true
-  ),
-  // In progress (5 tasks)
-  "task-11": createSampleTask(
-    "task-11",
-    "Task 11: Onboarding Setup",
-    "20/10/2025",
-    "Medium",
-    ["Bob"],
-    "Epsilon LLC",
-    false
-  ),
-  "task-12": createSampleTask(
-    "task-12",
-    "Task 12: System Integration",
-    "21/10/2025",
-    "High",
-    ["Charlie"],
-    "Zeta Enterprises",
-    true
-  ),
-  "task-13": createSampleTask(
-    "task-13",
-    "Task 13: User Training",
-    "22/10/2025",
-    "Medium",
-    ["Alice"],
-    "Acme Corp",
-    false
-  ),
-  "task-14": createSampleTask(
-    "task-14",
-    "Task 14: Process Optimization",
-    "23/10/2025",
-    "Low",
-    ["Bob"],
-    "Beta Ltd",
-    false
-  ),
-  "task-15": createSampleTask(
-    "task-15",
-    "Task 15: Quality Assurance",
-    "24/10/2025",
-    "High",
-    ["Charlie"],
-    "Gamma Inc",
-    true
-  ),
-  // Completed (5 tasks)
-  "task-16": createSampleTask(
-    "task-16",
-    "Task 16: Initial Setup",
-    "08/10/2025",
-    "High",
-    ["Alice"],
-    "Delta Co",
-    true
-  ),
-  "task-17": createSampleTask(
-    "task-17",
-    "Task 17: Data Migration",
-    "09/10/2025",
-    "Medium",
-    ["Bob"],
-    "Epsilon LLC",
-    false
-  ),
-  "task-18": createSampleTask(
-    "task-18",
-    "Task 18: System Audit",
-    "08/10/2025",
-    "Low",
-    ["Charlie"],
-    "Zeta Enterprises",
-    false
-  ),
-  "task-19": createSampleTask(
-    "task-19",
-    "Task 19: Final Review",
-    "09/10/2025",
-    "High",
-    ["Alice"],
-    "Acme Corp",
-    true
-  ),
-  "task-20": createSampleTask(
-    "task-20",
-    "Task 20: Go Live",
-    "10/10/2025",
-    "Medium",
-    ["Bob"],
-    "Beta Ltd",
-    false
   ),
 };
 
@@ -255,42 +72,27 @@ const initializeBoard = () => {
   };
   board.columns["task-column-1"].cardIds = Object.keys(initialTasks).slice(
     0,
-    10
-  );
-  board.columns["task-column-2"].cardIds = Object.keys(initialTasks).slice(
-    10,
-    15
-  );
-  board.columns["task-column-3"].cardIds = Object.keys(initialTasks).slice(
-    15,
-    20
+    1
   );
   return board;
 };
 
-const initialBoards = {
-  "board-1": initializeBoard(),
-};
+const initialBoards = { "board-1": initializeBoard() };
 
 const TaskKanban = () => {
-  // Multi-board state.
   const [boards, setBoards] = useState(initialBoards);
   const [currentBoardId, setCurrentBoardId] = useState("board-1");
-  // View toggle: "all" vs. "my" tasks.
   const [viewFilter, setViewFilter] = useState("all");
-  // Basic filter state.
   const [filter, setFilter] = useState({ CSM: "", riskStatus: "", tag: "" });
-  // Advanced filter state.
   const [advancedFilter, setAdvancedFilter] = useState({
     dueFrom: "",
     dueTo: "",
     assignedTo: "",
     priority: "",
   });
-  // Toggle for showing advanced filters.
   const [showFilters, setShowFilters] = useState(false);
-  // Toggle for showing the Task Template Modal.
   const [showTemplateModal, setShowTemplateModal] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
   const currentUser = "Alice";
   const currentBoard = boards[currentBoardId];
 
@@ -301,7 +103,6 @@ const TaskKanban = () => {
     }
   }, []);
 
-  // Function to update a task and auto-move if all subtasks are completed.
   const updateTask = (updatedTask) => {
     setBoards((prevBoards) => {
       const board = prevBoards[currentBoardId];
@@ -362,17 +163,15 @@ const TaskKanban = () => {
       board.columns[newStart.id] = newStart;
       board.columns[newFinish.id] = newFinish;
 
-      // If the task was moved to the "Completed" column, trigger fireworks!
       if (finishCol.title.toLowerCase() === "completed") {
-        // Fire confetti with some custom parameters
-        confetti({
-          particleCount: 100,
-          spread: 70,
-          origin: { y: 0.6 },
-        });
+        setShowConfetti(true);
+        setTimeout(() => {
+          setShowConfetti(false);
+        }, 3000);
       }
     }
     setBoards({ ...boards, [currentBoardId]: board });
+    // Optionally, update tasks in Supabase here.
   };
 
   const sortTasks = (taskIds) => {
@@ -383,9 +182,7 @@ const TaskKanban = () => {
         if (priorityOrder[b.priority] !== priorityOrder[a.priority]) {
           return priorityOrder[b.priority] - priorityOrder[a.priority];
         }
-        const dateA = new Date(a.dueDate);
-        const dateB = new Date(b.dueDate);
-        return dateA - dateB;
+        return new Date(a.dueDate) - new Date(b.dueDate);
       });
   };
 
@@ -398,16 +195,16 @@ const TaskKanban = () => {
     }
     filteredIds = filteredIds.filter((id) => {
       const task = currentBoard.tasks[id];
-      if (advancedFilter.dueFrom) {
-        const fromDate = new Date(advancedFilter.dueFrom);
-        const taskDate = new Date(task.dueDate);
-        if (taskDate < fromDate) return false;
-      }
-      if (advancedFilter.dueTo) {
-        const toDate = new Date(advancedFilter.dueTo);
-        const taskDate = new Date(task.dueDate);
-        if (taskDate > toDate) return false;
-      }
+      if (
+        advancedFilter.dueFrom &&
+        new Date(task.dueDate) < new Date(advancedFilter.dueFrom)
+      )
+        return false;
+      if (
+        advancedFilter.dueTo &&
+        new Date(task.dueDate) > new Date(advancedFilter.dueTo)
+      )
+        return false;
       if (
         advancedFilter.assignedTo &&
         !task.assignedTo.includes(advancedFilter.assignedTo)
@@ -441,15 +238,7 @@ const TaskKanban = () => {
     };
     newBoard.columns["task-column-1"].cardIds = Object.keys(initialTasks).slice(
       0,
-      10
-    );
-    newBoard.columns["task-column-2"].cardIds = Object.keys(initialTasks).slice(
-      10,
-      15
-    );
-    newBoard.columns["task-column-3"].cardIds = Object.keys(initialTasks).slice(
-      15,
-      20
+      1
     );
     setBoards({ ...boards, [newBoardId]: newBoard });
     setCurrentBoardId(newBoardId);
@@ -465,8 +254,7 @@ const TaskKanban = () => {
     alert("Advanced Filter saved!");
   };
 
-  // Handler for applying a task template.
-  const handleApplyTemplate = (template) => {
+  const handleApplyTemplate = async (template) => {
     const newTaskId = "task-" + Date.now();
     const newTask = {
       ...template,
@@ -476,16 +264,35 @@ const TaskKanban = () => {
         ? template.assignedTo
         : [template.assignedTo],
       tags: Array.isArray(template.tags) ? template.tags : [template.tags],
+      comments: [],
+      status: "Not started",
     };
     const board = boards[currentBoardId];
     board.tasks = { ...board.tasks, [newTaskId]: newTask };
     board.columns["task-column-1"].cardIds.push(newTaskId);
     setBoards({ ...boards, [currentBoardId]: board });
+    const dbPayload = {
+      title: newTask.title,
+      due_date: newTask.dueDate,
+      priority: newTask.priority,
+      top_priority: newTask.topPriority,
+      assigned_to: newTask.assignedTo,
+      related_customer: newTask.relatedCustomer,
+      tags: newTask.tags,
+      subtasks: newTask.subtasks,
+      comments: newTask.comments,
+      status: newTask.status,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    const { error } = await supabase.from("tasks").insert(dbPayload);
+    if (error) console.error("Error inserting new task:", error.message);
+    setShowTemplateModal(false);
   };
 
   return (
     <div className="kanban-container">
-      {/* Grouped Board Controls */}
+      {showConfetti && <ReactConfetti numberOfPieces={200} />}
       <div className="board-controls">
         <div className="board-management">
           <label>
@@ -625,16 +432,12 @@ const TaskKanban = () => {
           </button>
         </div>
       </div>
-
-      {/* Task Template Modal */}
       {showTemplateModal && (
         <TaskTemplateModal
           onClose={() => setShowTemplateModal(false)}
           onApplyTemplate={handleApplyTemplate}
         />
       )}
-
-      {/* Kanban Board */}
       <DragDropContext onDragEnd={onDragEnd}>
         <div className="kanban-board">
           {Object.keys(currentBoard.columns).map((columnId) => {

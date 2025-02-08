@@ -1,4 +1,6 @@
+// src/components/UserForm.js
 import React, { useState } from "react";
+import { supabase } from "../utils/supabase";
 import "../styles/UserForm.css";
 
 const UserForm = () => {
@@ -13,16 +15,22 @@ const UserForm = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Submitted user:", formData);
-    alert("User added (prototype)");
-    setFormData({
-      name: "",
-      email: "",
-      role: "CSM",
-      phone: "",
+    // Insert new user record into the "users" table
+    const { data, error } = await supabase.from("users").insert({
+      name: formData.name,
+      email: formData.email,
+      role: formData.role,
+      phone: formData.phone,
     });
+    if (error) {
+      console.error("Error adding user:", error.message);
+      alert("Error adding user: " + error.message);
+    } else {
+      alert("User added successfully!");
+      setFormData({ name: "", email: "", role: "CSM", phone: "" });
+    }
   };
 
   return (

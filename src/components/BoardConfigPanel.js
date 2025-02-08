@@ -1,4 +1,6 @@
+// src/components/BoardConfigPanel.js
 import React, { useState } from "react";
+import { supabase } from "../utils/supabase";
 import "../styles/BoardConfigPanel.css";
 
 const BoardConfigPanel = () => {
@@ -11,10 +13,22 @@ const BoardConfigPanel = () => {
     setConfig({ ...config, [e.target.name]: e.target.value });
   };
 
-  const saveConfig = () => {
-    alert(
-      `Board configuration saved:\nSuccess Column: ${config.successColumn}\nFailure Column: ${config.failureColumn}`
-    );
+  const saveConfig = async () => {
+    // Update board configuration in the database.
+    // (Assuming board with id=1; adjust as needed.)
+    const { error } = await supabase
+      .from("boards")
+      .update({ config }) // requires a new column "config" (JSONB) in boards
+      .eq("id", 1);
+
+    if (error) {
+      console.error("Error saving board configuration:", error.message);
+      alert("Error saving board configuration: " + error.message);
+    } else {
+      alert(
+        `Board configuration saved:\nSuccess Column: ${config.successColumn}\nFailure Column: ${config.failureColumn}`
+      );
+    }
   };
 
   return (
