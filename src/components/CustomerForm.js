@@ -4,7 +4,6 @@ import { supabase } from "../utils/supabase";
 import "../styles/CustomerForm.css";
 
 const CustomerForm = () => {
-  // Standard customer fields (in camelCase on the client)
   const [formData, setFormData] = useState({
     name: "",
     ARR: "",
@@ -21,7 +20,7 @@ const CustomerForm = () => {
     riskStatus: "",
   });
 
-  // Load custom fields from localStorage (if any)
+  // Load custom fields from localStorage (if any).
   const [customFields, setCustomFields] = useState([]);
 
   useEffect(() => {
@@ -42,12 +41,11 @@ const CustomerForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Construct a new customer object matching the DB column names.
     const newCustomer = {
       name: formData.name,
       arr: parseFloat(formData.ARR),
       health_rank: formData.healthRank,
-      contract_start_date: formData.contractStart, // ideally convert from DD/MM/YYYY to YYYY-MM-DD
+      contract_start_date: formData.contractStart,
       renewal_date: formData.renewalDate,
       last_login: formData.lastLogin,
       product_usage: formData.productUsage
@@ -61,15 +59,13 @@ const CustomerForm = () => {
       status: formData.status,
       csm: formData.CSM,
       risk_status: formData.riskStatus,
-      custom_data: {}, // Start with an empty object for custom fields
+      custom_data: {},
     };
 
-    // Merge in any custom fields
     customFields.forEach((field) => {
       newCustomer.custom_data[field.name] = formData[field.name] || null;
     });
 
-    // Insert the new customer into the database
     const { data, error } = await supabase
       .from("customers")
       .insert(newCustomer);
@@ -79,7 +75,6 @@ const CustomerForm = () => {
       alert("Error adding customer: " + error.message);
     } else {
       alert("Customer added successfully!");
-      // Reset the form
       setFormData({
         name: "",
         ARR: "",
@@ -102,7 +97,6 @@ const CustomerForm = () => {
     <div className="customer-form-container">
       <h2>Add New Customer</h2>
       <form onSubmit={handleSubmit}>
-        {/* Standard field inputs … */}
         <label>
           Name:
           <input
@@ -226,11 +220,10 @@ const CustomerForm = () => {
             onChange={handleChange}
           />
         </label>
-        {/* Render additional custom fields if defined */}
         {customFields.map((field, idx) => (
           <label key={idx}>
             {field.label}:
-            {field.type === "text" ? (
+            {field.field_type === "text" ? (
               <input
                 type="text"
                 name={field.name}

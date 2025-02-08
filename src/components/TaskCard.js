@@ -13,20 +13,35 @@ const getPriorityColor = (priority, topPriority, isCompletedColumn) => {
   return colors[priority] || "#ccc";
 };
 
+// Helper function that ensures the value is returned as an array.
+const normalizeArray = (value) => {
+  if (Array.isArray(value)) {
+    return value;
+  } else if (value !== null && value !== undefined) {
+    return [value];
+  } else {
+    return [];
+  }
+};
+
 const TaskCard = ({ task, index, updateTask, isCompletedColumn }) => {
-  // Use fallback empty arrays if assignedTo or tags are undefined.
-  const initialAssignedTo = (task.assignedTo || []).join(", ");
-  const initialTags = (task.tags || []).join(", ");
+  // Normalize the assigned_to and tags fields.
+  const assignedToArray = normalizeArray(task.assigned_to);
+  const tagsArray = normalizeArray(task.tags);
+
+  // Use normalized values to create initial strings.
+  const initialAssignedTo = assignedToArray.join(", ");
+  const initialTags = tagsArray.join(", ");
 
   const [expanded, setExpanded] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [editedTask, setEditedTask] = useState({
     title: task.title,
-    dueDate: task.dueDate,
+    dueDate: task.due_date,
     priority: task.priority,
     assignedTo: initialAssignedTo,
-    relatedCustomer: task.relatedCustomer || "",
+    relatedCustomer: task.related_customer || "",
     tags: initialTags,
   });
 
@@ -36,7 +51,9 @@ const TaskCard = ({ task, index, updateTask, isCompletedColumn }) => {
     ? task.subtasks.filter((st) => st.completed).length
     : 0;
   const progressPercentage =
-    totalSubtasks > 0 ? Math.round((completedSubtasks / totalSubtasks) * 100) : 0;
+    totalSubtasks > 0
+      ? Math.round((completedSubtasks / totalSubtasks) * 100)
+      : 0;
 
   const handleToggleSubtask = (subtaskId) => {
     const updatedSubtasks = (task.subtasks || []).map((st) =>
@@ -54,17 +71,20 @@ const TaskCard = ({ task, index, updateTask, isCompletedColumn }) => {
     const updatedTask = {
       ...task,
       title: editedTask.title,
-      dueDate: editedTask.dueDate,
+      due_date: editedTask.dueDate,
       priority: editedTask.priority,
-      assignedTo: editedTask.assignedTo
+      assigned_to: editedTask.assignedTo
         .split(",")
         .map((s) => s.trim())
         .filter(Boolean),
-      relatedCustomer: editedTask.relatedCustomer,
-      tags: editedTask.tags.split(",").map((s) => s.trim()).filter(Boolean),
+      related_customer: editedTask.relatedCustomer,
+      tags: editedTask.tags
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean),
     };
     updateTask(updatedTask);
-    // Optionally, update in database here if you have a helper like updateTaskInDB(updatedTask)
+    // Optionally, update in database here if needed.
     setEditMode(false);
   };
 
@@ -73,7 +93,7 @@ const TaskCard = ({ task, index, updateTask, isCompletedColumn }) => {
       <Draggable draggableId={String(task.id)} index={index}>
         {(provided) => (
           <div
-            className={`task-card ${task.topPriority ? "top-priority" : ""}`}
+            className={`task-card ${task.top_priority ? "top-priority" : ""}`}
             ref={provided.innerRef}
             {...provided.draggableProps}
             {...provided.dragHandleProps}
@@ -86,7 +106,7 @@ const TaskCard = ({ task, index, updateTask, isCompletedColumn }) => {
               ...provided.draggableProps.style,
               borderLeft: `5px solid ${getPriorityColor(
                 task.priority,
-                task.topPriority,
+                task.top_priority,
                 isCompletedColumn
               )}`,
             }}
@@ -125,7 +145,9 @@ const TaskCard = ({ task, index, updateTask, isCompletedColumn }) => {
                   <input
                     type="text"
                     value={editedTask.relatedCustomer}
-                    onChange={(e) => handleChange("relatedCustomer", e.target.value)}
+                    onChange={(e) =>
+                      handleChange("relatedCustomer", e.target.value)
+                    }
                     placeholder="Related Customer"
                     className="editable-input"
                   />
@@ -144,23 +166,27 @@ const TaskCard = ({ task, index, updateTask, isCompletedColumn }) => {
                 <>
                   <h4>{task.title}</h4>
                   <p>
-                    <strong>Due:</strong> {task.dueDate}
+                    <strong>Due:</strong> {task.due_date}
                   </p>
                   <p>
                     <strong>Priority:</strong> {task.priority}
                   </p>
                   <p>
                     <strong>Assigned:</strong>{" "}
-                    {(task.assignedTo || []).join(", ")}
+                    {Array.isArray(task.assigned_to)
+                      ? task.assigned_to.join(", ")
+                      : task.assigned_to || ""}
                   </p>
-                  {task.relatedCustomer && (
+                  {task.related_customer && (
                     <p>
-                      <strong>Customer:</strong> {task.relatedCustomer}
+                      <strong>Customer:</strong> {task.related_customer}
                     </p>
                   )}
                   <p>
                     <strong>Tags:</strong>{" "}
-                    {(task.tags || []).join(", ")}
+                    {Array.isArray(task.tags)
+                      ? task.tags.join(", ")
+                      : task.tags || ""}
                   </p>
                   <button
                     onClick={(e) => {

@@ -14,13 +14,12 @@ const BoardConfigPanel = () => {
   };
 
   const saveConfig = async () => {
-    // Update board configuration in the database.
-    // (Assuming board with id=1; adjust as needed.)
+    // Update board configuration in the boards table.
+    // Ensure that your boards table has a column "config" of type JSONB.
     const { error } = await supabase
       .from("boards")
-      .update({ config }) // requires a new column "config" (JSONB) in boards
+      .update({ config })
       .eq("id", 1);
-
     if (error) {
       console.error("Error saving board configuration:", error.message);
       alert("Error saving board configuration: " + error.message);

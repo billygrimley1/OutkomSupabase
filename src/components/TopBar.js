@@ -8,8 +8,9 @@ const TopBar = ({ setView, currentView, onAddTask }) => {
     if (currentView === "workflows") {
       alert("Add new customer record (supabase integration prototype)");
     } else if (currentView === "actions") {
-      // Instead of an alert, call the onAddTask callback.
-      onAddTask();
+      if (onAddTask) {
+        onAddTask();
+      }
     }
   };
 

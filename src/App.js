@@ -9,17 +9,14 @@ import UserForm from "./components/UserForm";
 import CustomFieldsManager from "./components/CustomFieldsManager";
 import ReportsDashboard from "./components/ReportsDashboard";
 import BoardConfigPanel from "./components/BoardConfigPanel";
-import Todos from "./components/Todos"; // Import the Todos component
-import AddTaskModal from "./components/AddTaskModal"; // New component for adding tasks
+import Todos from "./components/Todos";
+import AddTaskModal from "./components/AddTaskModal";
 import "./styles/App.css";
 
 function App() {
-  // view controls which page is visible; default is "workflows"
   const [view, setView] = useState("workflows");
-  // State for showing the Add Task modal (used when view is "actions")
   const [showAddTaskModal, setShowAddTaskModal] = useState(false);
 
-  // Render the appropriate component based on the current view.
   const renderView = () => {
     switch (view) {
       case "workflows":
@@ -43,36 +40,27 @@ function App() {
     }
   };
 
-  // When the "Add Task" button is pressed in TopBar, show the modal.
-  const handleAddTask = () => {
-    setShowAddTaskModal(true);
-  };
-
-  // Callback when a task is successfully added.
-  const handleTaskAdded = (newTask) => {
-    console.log("New task added:", newTask);
-    // Optionally, update state to refresh the TaskKanban board.
-  };
-
   return (
     <div className="app-container">
       <LeftNav setView={setView} currentView={view} />
       <div className="main-content">
+        {/* Pass onAddTask callback only for the Actions view */}
         <TopBar
           setView={setView}
           currentView={view}
-          onAddTask={handleAddTask} // Pass the Add Task callback
+          onAddTask={() => setShowAddTaskModal(true)}
         />
-        <div className="view-container">
-          {renderView()}
-          {showAddTaskModal && (
-            <AddTaskModal
-              onClose={() => setShowAddTaskModal(false)}
-              onTaskAdded={handleTaskAdded}
-            />
-          )}
-        </div>
+        <div className="view-container">{renderView()}</div>
       </div>
+      {showAddTaskModal && (
+        <AddTaskModal
+          onClose={() => setShowAddTaskModal(false)}
+          onTaskAdded={(newTask) => {
+            // Optionally refresh tasks in TaskKanban if needed.
+            setShowAddTaskModal(false);
+          }}
+        />
+      )}
     </div>
   );
 }

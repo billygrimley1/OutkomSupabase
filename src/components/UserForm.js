@@ -17,7 +17,6 @@ const UserForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // Insert new user record into the "users" table
     const { data, error } = await supabase.from("users").insert({
       name: formData.name,
       email: formData.email,

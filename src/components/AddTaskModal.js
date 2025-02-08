@@ -23,23 +23,19 @@ const parseInteger = (input) => {
 };
 
 const AddTaskModal = ({ onClose, onTaskAdded }) => {
-  // State for main task details.
   const [formData, setFormData] = useState({
     title: "",
     dueDate: "",
     priority: "Medium",
-    assignedTo: "", // Optional: numeric IDs (comma separated)
-    relatedCustomer: "", // Optional: numeric ID
+    assignedTo: "",
+    relatedCustomer: "",
     tags: "",
     topPriority: false,
     status: "Not started",
   });
-
-  // State for subtasks (each subtask is an object with id, text, and completed flag).
   const [subtasks, setSubtasks] = useState([]);
   const [newSubtask, setNewSubtask] = useState("");
 
-  // Update form fields.
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData({
@@ -48,11 +44,10 @@ const AddTaskModal = ({ onClose, onTaskAdded }) => {
     });
   };
 
-  // Add a new subtask locally.
   const handleAddSubtask = () => {
     if (newSubtask.trim() === "") return;
     const newSubtaskObj = {
-      id: Date.now().toString(), // temporary id for UI
+      id: Date.now().toString(),
       text: newSubtask.trim(),
       completed: false,
     };
@@ -60,16 +55,13 @@ const AddTaskModal = ({ onClose, onTaskAdded }) => {
     setNewSubtask("");
   };
 
-  // Remove a subtask from the list.
   const handleRemoveSubtask = (id) => {
     setSubtasks(subtasks.filter((subtask) => subtask.id !== id));
   };
 
-  // Handle form submission: insert the main task, then each subtask.
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Prepare the main task record (do not include subtasks here).
     const newTask = {
       title: formData.title,
       due_date: formData.dueDate,
@@ -92,7 +84,6 @@ const AddTaskModal = ({ onClose, onTaskAdded }) => {
       updated_at: new Date().toISOString(),
     };
 
-    // Insert the main task into the tasks table.
     const { data: taskData, error } = await supabase
       .from("tasks")
       .insert(newTask);
@@ -100,12 +91,8 @@ const AddTaskModal = ({ onClose, onTaskAdded }) => {
       alert("Error adding task: " + error.message);
       return;
     }
-
-    // Ensure data is returned and is an array with at least one element.
     if (taskData && Array.isArray(taskData) && taskData.length > 0) {
       const insertedTask = taskData[0];
-
-      // Loop over each subtask and insert it into the subtasks table.
       for (const subtask of subtasks) {
         const { error: subError } = await supabase.from("subtasks").insert({
           task_id: insertedTask.id,
@@ -117,15 +104,12 @@ const AddTaskModal = ({ onClose, onTaskAdded }) => {
           console.error("Error inserting subtask:", subError.message);
         }
       }
-
-      // Optionally notify the parent component.
       if (onTaskAdded) {
         onTaskAdded(insertedTask);
       }
     } else {
       console.warn("No task data returned from insert.");
     }
-
     onClose();
   };
 
@@ -204,7 +188,6 @@ const AddTaskModal = ({ onClose, onTaskAdded }) => {
               onChange={handleChange}
             />
           </label>
-
           <div className="subtasks-section">
             <h3>Subtasks</h3>
             <div className="new-subtask">
@@ -235,7 +218,6 @@ const AddTaskModal = ({ onClose, onTaskAdded }) => {
               </ul>
             )}
           </div>
-
           <div className="modal-buttons">
             <button type="submit">Add Task</button>
             <button type="button" onClick={onClose}>

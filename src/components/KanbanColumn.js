@@ -14,7 +14,7 @@ const KanbanColumn = ({ column, cards, updateColumn }) => {
     setIsEditing(false);
     const updatedColumn = { ...column, title, automationTrigger };
     updateColumn(column.id, updatedColumn);
-    // If needed, update the column record in Supabase here.
+    // Optionally, update the column record in Supabase here.
   };
 
   return (

@@ -33,62 +33,19 @@ const CommentsPanel = ({ card, onClose }) => {
           </button>
         </div>
         <div className="comments-body">
-          {/* Basic Information Section */}
           <div className="card-info">
             <p>
-              <strong>Risk:</strong> {card.riskStatus}
+              <strong>Risk:</strong> {card.risk_status}
             </p>
             <p>
-              <strong>Health:</strong> {card.healthRank}
-            </p>
-            <p>
-              <strong>Renewal:</strong> {card.renewalDate}
-            </p>
-            <p>
-              <strong>CSM:</strong> {card.CSM}
-            </p>
-            <p>
-              <strong>ARR:</strong> €{card.ARR.toLocaleString()}
-            </p>
-            <p>
-              <strong>Tags:</strong> {card.tags.join(", ")}
+              <strong>Status:</strong> {card.status}
             </p>
           </div>
-          {/* Additional Information Section */}
-          <div className="additional-info">
-            <h4>Additional Information</h4>
-            <p>
-              <strong>Usage:</strong> {card.usage || "N/A"}
-            </p>
-            <p>
-              <strong>Last Contact:</strong> {card.lastContact || "N/A"}
-            </p>
-            <p>
-              <strong>Contract Start:</strong> {card.contractStart || "N/A"}
-            </p>
-            <p>
-              <strong>Last Login:</strong> {card.lastLogin || "N/A"}
-            </p>
-            <p>
-              <strong>Product Usage:</strong> {card.productUsage || "N/A"}
-            </p>
-            <p>
-              <strong>Number of Users:</strong> {card.numberOfUsers || "N/A"}
-            </p>
-            <p>
-              <strong>Main Contact Email:</strong>{" "}
-              {card.mainContactEmail || "N/A"}
-            </p>
-            <p>
-              <strong>Status:</strong> {card.status || "N/A"}
-            </p>
-          </div>
-          {/* Comments Section */}
           <div className="comments-section">
             <h4>Comments</h4>
             {comments.length > 0 ? (
-              comments.map((comment, index) => (
-                <div key={index} className="comment-item">
+              comments.map((comment, idx) => (
+                <div key={idx} className="comment-item">
                   {comment}
                 </div>
               ))
