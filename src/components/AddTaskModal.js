@@ -27,15 +27,18 @@ const AddTaskModal = ({ onClose, onTaskAdded }) => {
     title: "",
     dueDate: "",
     priority: "Medium",
-    assignedTo: "",
-    relatedCustomer: "",
+    assignedTo: "", // Optional: numeric IDs (comma separated)
+    relatedCustomer: "", // Optional: numeric ID
     tags: "",
     topPriority: false,
     status: "Not started",
   });
+
+  // State for subtasks (each subtask is an object with id, text, and completed flag).
   const [subtasks, setSubtasks] = useState([]);
   const [newSubtask, setNewSubtask] = useState("");
 
+  // Update form fields.
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData({
@@ -44,10 +47,11 @@ const AddTaskModal = ({ onClose, onTaskAdded }) => {
     });
   };
 
+  // Add a new subtask locally.
   const handleAddSubtask = () => {
     if (newSubtask.trim() === "") return;
     const newSubtaskObj = {
-      id: Date.now().toString(),
+      id: Date.now().toString(), // temporary id for UI
       text: newSubtask.trim(),
       completed: false,
     };
@@ -55,10 +59,12 @@ const AddTaskModal = ({ onClose, onTaskAdded }) => {
     setNewSubtask("");
   };
 
+  // Remove a subtask from the list.
   const handleRemoveSubtask = (id) => {
     setSubtasks(subtasks.filter((subtask) => subtask.id !== id));
   };
 
+  // Handle form submission: insert the main task (with subtasks stored in the subtasks JSONB field).
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -79,6 +85,7 @@ const AddTaskModal = ({ onClose, onTaskAdded }) => {
             .map((s) => s.trim())
             .filter(Boolean)
         : [],
+      subtasks: subtasks, // Store subtasks as part of the task record.
       status: formData.status,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
@@ -93,17 +100,6 @@ const AddTaskModal = ({ onClose, onTaskAdded }) => {
     }
     if (taskData && Array.isArray(taskData) && taskData.length > 0) {
       const insertedTask = taskData[0];
-      for (const subtask of subtasks) {
-        const { error: subError } = await supabase.from("subtasks").insert({
-          task_id: insertedTask.id,
-          text: subtask.text,
-          completed: subtask.completed,
-          created_at: new Date().toISOString(),
-        });
-        if (subError) {
-          console.error("Error inserting subtask:", subError.message);
-        }
-      }
       if (onTaskAdded) {
         onTaskAdded(insertedTask);
       }
