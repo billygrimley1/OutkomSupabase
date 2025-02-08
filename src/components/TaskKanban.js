@@ -13,11 +13,18 @@ const defaultTaskColumns = {
   "task-column-3": { id: "task-column-3", title: "Completed", cardIds: [] },
 };
 
+// Helper to create a fresh copy of the task columns.
+const createEmptyTaskColumns = () =>
+  Object.keys(defaultTaskColumns).reduce((acc, key) => {
+    acc[key] = { ...defaultTaskColumns[key], cardIds: [] };
+    return acc;
+  }, {});
+
 const TaskKanban = () => {
   const [board, setBoard] = useState({
     id: "board-1",
     name: "Task Board",
-    columns: { ...defaultTaskColumns },
+    columns: createEmptyTaskColumns(),
     tasks: {},
   });
   const [showTemplateModal, setShowTemplateModal] = useState(false);
@@ -34,10 +41,11 @@ const TaskKanban = () => {
         const newBoard = {
           id: "board-1",
           name: "Task Board",
-          columns: { ...defaultTaskColumns },
+          columns: createEmptyTaskColumns(),
           tasks: {},
         };
         data.forEach((task) => {
+          // Save each task keyed by its id.
           newBoard.tasks[task.id] = task;
           let columnKey = "task-column-1"; // default: Not started
           if (task.status) {
@@ -56,7 +64,8 @@ const TaskKanban = () => {
     fetchTasks();
   }, [showTemplateModal]);
 
-  const onDragEnd = async (result) => {
+  // Use a functional update in onDragEnd to ensure we're working with the latest board state.
+  const onDragEnd = (result) => {
     const { destination, source, draggableId } = result;
     if (!destination) return;
     if (
@@ -65,51 +74,69 @@ const TaskKanban = () => {
     )
       return;
 
-    // Clone board state immutably.
-    const newBoard = { ...board };
-    newBoard.columns = { ...board.columns };
+    setBoard((prevBoard) => {
+      // Create new copies of the columns for a deep-ish clone.
+      const newColumns = { ...prevBoard.columns };
+      const sourceCol = { ...newColumns[source.droppableId] };
+      const destCol = { ...newColumns[destination.droppableId] };
 
-    const sourceCol = { ...newBoard.columns[source.droppableId] };
-    const destCol = { ...newBoard.columns[destination.droppableId] };
+      const newSourceCardIds = Array.from(sourceCol.cardIds);
+      newSourceCardIds.splice(source.index, 1);
+      sourceCol.cardIds = newSourceCardIds;
 
-    const newSourceCardIds = Array.from(sourceCol.cardIds);
-    newSourceCardIds.splice(source.index, 1);
-    sourceCol.cardIds = newSourceCardIds;
+      const newDestCardIds = Array.from(destCol.cardIds);
+      newDestCardIds.splice(destination.index, 0, draggableId);
+      destCol.cardIds = newDestCardIds;
 
-    const newDestCardIds = Array.from(destCol.cardIds);
-    newDestCardIds.splice(destination.index, 0, draggableId);
-    destCol.cardIds = newDestCardIds;
+      newColumns[source.droppableId] = sourceCol;
+      newColumns[destination.droppableId] = destCol;
 
-    newBoard.columns[source.droppableId] = sourceCol;
-    newBoard.columns[destination.droppableId] = destCol;
+      // Create a new board object with the updated columns.
+      const newBoard = { ...prevBoard, columns: newColumns };
 
-    // Update the task's status in the database.
+      // Update the task's local status.
+      const task = prevBoard.tasks[draggableId];
+      if (task) {
+        task.status = newBoard.columns[destination.droppableId].title;
+      }
+
+      // If the task moved to the "Completed" column, trigger confetti.
+      if (
+        newBoard.columns[destination.droppableId].title.toLowerCase() ===
+        "completed"
+      ) {
+        setShowConfetti(true);
+        setTimeout(() => setShowConfetti(false), 3000);
+      }
+
+      // Return the updated board state.
+      return newBoard;
+    });
+
+    // Update the task's status in the database asynchronously.
     const task = board.tasks[draggableId];
     if (task) {
-      const newStatus = destCol.title;
-      task.status = newStatus;
-      const { error } = await supabase
+      const newStatus = board.columns[destination.droppableId].title;
+      supabase
         .from("tasks")
-        .update({ status: newStatus, updated_at: new Date().toISOString() })
-        .eq("id", task.id);
-      if (error) {
-        console.error("Error updating task:", error.message);
-      }
-    }
-
-    setBoard(newBoard);
-
-    if (destCol.title.toLowerCase() === "completed") {
-      setShowConfetti(true);
-      setTimeout(() => setShowConfetti(false), 3000);
+        .update({
+          status: newStatus,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", task.id)
+        .then(({ error }) => {
+          if (error) {
+            console.error("Error updating task:", error.message);
+          }
+        });
     }
   };
 
   const updateTask = (updatedTask) => {
     setBoard((prevBoard) => {
-      const newBoard = { ...prevBoard, tasks: { ...prevBoard.tasks } };
-      newBoard.tasks[updatedTask.id] = updatedTask;
-      return newBoard;
+      const newTasks = { ...prevBoard.tasks };
+      newTasks[updatedTask.id] = updatedTask;
+      return { ...prevBoard, tasks: newTasks };
     });
   };
 
@@ -144,10 +171,15 @@ const TaskKanban = () => {
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
-    const newBoard = { ...board };
-    newBoard.tasks[newTaskId] = newTask;
-    newBoard.columns["task-column-1"].cardIds.push(newTaskId);
-    setBoard(newBoard);
+    setBoard((prevBoard) => {
+      const newBoard = { ...prevBoard, tasks: { ...prevBoard.tasks } };
+      newBoard.tasks[newTaskId] = newTask;
+      newBoard.columns["task-column-1"].cardIds = [
+        ...newBoard.columns["task-column-1"].cardIds,
+        newTaskId,
+      ];
+      return newBoard;
+    });
     const { error } = await supabase.from("tasks").insert(newTask);
     if (error) {
       console.error("Error inserting new task:", error.message);
@@ -221,6 +253,12 @@ const TaskKanban = () => {
           })}
         </div>
       </DragDropContext>
+      {showTemplateModal && (
+        <TaskTemplateModal
+          onApplyTemplate={handleApplyTemplate}
+          onClose={() => setShowTemplateModal(false)}
+        />
+      )}
     </div>
   );
 };
