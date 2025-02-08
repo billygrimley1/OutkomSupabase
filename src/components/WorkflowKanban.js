@@ -19,7 +19,7 @@ const WorkflowKanban = () => {
   const [board, setBoard] = useState({
     id: "board-1",
     name: "Customer Board",
-    columns: { ...defaultColumns },
+    columns: {}, // we'll initialize this in useEffect
     customers: {},
   });
   const [showConfetti, setShowConfetti] = useState(false);
@@ -31,12 +31,19 @@ const WorkflowKanban = () => {
       if (error) {
         console.error("Error fetching customers:", error.message);
       } else if (data) {
+        // Create a fresh deep copy of defaultColumns with empty cardIds.
+        const newColumns = Object.keys(defaultColumns).reduce((acc, key) => {
+          acc[key] = { ...defaultColumns[key], cardIds: [] };
+          return acc;
+        }, {});
+
         const newBoard = {
           id: "board-1",
           name: "Customer Board",
-          columns: { ...defaultColumns },
+          columns: newColumns,
           customers: {},
         };
+
         data.forEach((customer) => {
           // Convert the customer ID to a string for consistency.
           const custId = String(customer.id);
