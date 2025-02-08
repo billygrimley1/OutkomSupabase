@@ -1,8 +1,9 @@
 // src/components/TaskCard.js
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Draggable } from "react-beautiful-dnd";
 import TaskCommentsPanel from "./TaskCommentsPanel";
 import "../styles/TaskCard.css";
+import { supabase } from "../utils/supabase";
 
 // Helper to determine color for priority.
 // If the task is in a completed column, return green.
@@ -45,6 +46,15 @@ const TaskCard = ({ task, index, updateTask, isCompletedColumn }) => {
     tags: initialTags,
   });
 
+  // States for editing subtasks.
+  const [editingSubtasks, setEditingSubtasks] = useState(false);
+  const [editedSubtasks, setEditedSubtasks] = useState(task.subtasks || []);
+
+  // When task.subtasks changes (from parent updates), reset the editor.
+  useEffect(() => {
+    setEditedSubtasks(task.subtasks || []);
+  }, [task.subtasks]);
+
   // Calculate subtask progress.
   const totalSubtasks = task.subtasks ? task.subtasks.length : 0;
   const completedSubtasks = task.subtasks
@@ -61,6 +71,17 @@ const TaskCard = ({ task, index, updateTask, isCompletedColumn }) => {
     );
     const updatedTask = { ...task, subtasks: updatedSubtasks };
     updateTask(updatedTask);
+    // Also update the database.
+    supabase
+      .from("tasks")
+      .update({
+        subtasks: updatedSubtasks,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", task.id)
+      .then(({ error }) => {
+        if (error) console.error("Error updating subtask:", error.message);
+      });
   };
 
   const handleChange = (field, value) => {
@@ -84,9 +105,71 @@ const TaskCard = ({ task, index, updateTask, isCompletedColumn }) => {
         .filter(Boolean),
     };
     updateTask(updatedTask);
-    // Optionally, update in database here if needed.
     setEditMode(false);
   };
+
+  // ===== Subtasks Editor Handlers =====
+  const handleSubtaskTextChange = (index, newText) => {
+    setEditedSubtasks((prev) => {
+      const newSubtasks = [...prev];
+      newSubtasks[index] = { ...newSubtasks[index], text: newText };
+      return newSubtasks;
+    });
+  };
+
+  const moveSubtaskUp = (index) => {
+    if (index === 0) return;
+    setEditedSubtasks((prev) => {
+      const newSubtasks = [...prev];
+      [newSubtasks[index - 1], newSubtasks[index]] = [
+        newSubtasks[index],
+        newSubtasks[index - 1],
+      ];
+      return newSubtasks;
+    });
+  };
+
+  const moveSubtaskDown = (index) => {
+    if (index === editedSubtasks.length - 1) return;
+    setEditedSubtasks((prev) => {
+      const newSubtasks = [...prev];
+      [newSubtasks[index], newSubtasks[index + 1]] = [
+        newSubtasks[index + 1],
+        newSubtasks[index],
+      ];
+      return newSubtasks;
+    });
+  };
+
+  const removeSubtask = (index) => {
+    setEditedSubtasks((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const addSubtask = () => {
+    const newSubtask = {
+      id: "subtask-" + Date.now(),
+      text: "",
+      completed: false,
+    };
+    setEditedSubtasks((prev) => [...prev, newSubtask]);
+  };
+
+  const saveSubtasks = async () => {
+    const updatedTask = { ...task, subtasks: editedSubtasks };
+    updateTask(updatedTask);
+    const { error } = await supabase
+      .from("tasks")
+      .update({
+        subtasks: editedSubtasks,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", task.id);
+    if (error) {
+      console.error("Error updating subtasks:", error.message);
+    }
+    setEditingSubtasks(false);
+  };
+  // ===== End Subtasks Editor Handlers =====
 
   return (
     <>
@@ -119,17 +202,20 @@ const TaskCard = ({ task, index, updateTask, isCompletedColumn }) => {
                     value={editedTask.title}
                     onChange={(e) => handleChange("title", e.target.value)}
                     className="editable-input"
+                    onClick={(e) => e.stopPropagation()}
                   />
                   <input
                     type="date"
                     value={editedTask.dueDate}
                     onChange={(e) => handleChange("dueDate", e.target.value)}
                     className="editable-input"
+                    onClick={(e) => e.stopPropagation()}
                   />
                   <select
                     value={editedTask.priority}
                     onChange={(e) => handleChange("priority", e.target.value)}
                     className="editable-input"
+                    onClick={(e) => e.stopPropagation()}
                   >
                     <option value="High">High</option>
                     <option value="Medium">Medium</option>
@@ -141,6 +227,7 @@ const TaskCard = ({ task, index, updateTask, isCompletedColumn }) => {
                     onChange={(e) => handleChange("assignedTo", e.target.value)}
                     placeholder="Assigned To (comma separated)"
                     className="editable-input"
+                    onClick={(e) => e.stopPropagation()}
                   />
                   <input
                     type="text"
@@ -150,6 +237,7 @@ const TaskCard = ({ task, index, updateTask, isCompletedColumn }) => {
                     }
                     placeholder="Related Customer"
                     className="editable-input"
+                    onClick={(e) => e.stopPropagation()}
                   />
                   <input
                     type="text"
@@ -157,8 +245,15 @@ const TaskCard = ({ task, index, updateTask, isCompletedColumn }) => {
                     onChange={(e) => handleChange("tags", e.target.value)}
                     placeholder="Tags (comma separated)"
                     className="editable-input"
+                    onClick={(e) => e.stopPropagation()}
                   />
-                  <button onClick={saveEdits} className="save-button">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      saveEdits();
+                    }}
+                    className="save-button"
+                  >
                     Save
                   </button>
                 </>
@@ -203,37 +298,133 @@ const TaskCard = ({ task, index, updateTask, isCompletedColumn }) => {
             {expanded && !editMode && (
               <div className="task-card-expanded">
                 <div className="subtasks-section">
-                  <h5>Subtasks</h5>
-                  {totalSubtasks > 0 ? (
-                    <ul>
-                      {(task.subtasks || []).map((st) => (
-                        <li
-                          key={st.id}
-                          className={st.completed ? "completed" : ""}
+                  <div className="subtasks-header">
+                    <h5>Subtasks</h5>
+                    {!editingSubtasks && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditingSubtasks(true);
+                          setEditedSubtasks(task.subtasks || []);
+                        }}
+                        className="subtasks-edit-button"
+                        title="Edit subtasks"
+                      >
+                        ✏️
+                      </button>
+                    )}
+                  </div>
+                  {editingSubtasks ? (
+                    <div className="subtasks-editor">
+                      {editedSubtasks.map((st, idx) => (
+                        <div key={st.id} className="subtask-editor-item">
+                          <input
+                            type="text"
+                            value={st.text}
+                            onChange={(e) =>
+                              handleSubtaskTextChange(idx, e.target.value)
+                            }
+                            onClick={(e) => e.stopPropagation()}
+                            className="editable-input"
+                          />
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              moveSubtaskUp(idx);
+                            }}
+                            className="subtask-move-button"
+                            title="Move up"
+                          >
+                            ▲
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              moveSubtaskDown(idx);
+                            }}
+                            className="subtask-move-button"
+                            title="Move down"
+                          >
+                            ▼
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removeSubtask(idx);
+                            }}
+                            className="subtask-remove-button"
+                            title="Remove subtask"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ))}
+                      <div className="subtasks-editor-actions">
+                        <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleToggleSubtask(st.id);
+                            addSubtask();
                           }}
+                          className="save-button"
                         >
-                          {st.text}
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p>No subtasks</p>
-                  )}
-                  {totalSubtasks > 0 && (
-                    <div className="progress-bar">
-                      <div
-                        className="progress-fill"
-                        style={{
-                          background: isCompletedColumn ? "#32CD32" : "#ffd700",
-                          width: `${progressPercentage}%`,
-                        }}
-                      >
-                        {progressPercentage}%
+                          Add Subtask
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            saveSubtasks();
+                          }}
+                          className="save-button"
+                        >
+                          Save
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingSubtasks(false);
+                          }}
+                          className="save-button cancel-button"
+                        >
+                          Cancel
+                        </button>
                       </div>
                     </div>
+                  ) : (
+                    <>
+                      {totalSubtasks > 0 ? (
+                        <ul>
+                          {(task.subtasks || []).map((st) => (
+                            <li
+                              key={st.id}
+                              className={st.completed ? "completed" : ""}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleToggleSubtask(st.id);
+                              }}
+                            >
+                              {st.text}
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p>No subtasks</p>
+                      )}
+                      {totalSubtasks > 0 && (
+                        <div className="progress-bar">
+                          <div
+                            className="progress-fill"
+                            style={{
+                              background: isCompletedColumn
+                                ? "#32CD32"
+                                : "#ffd700",
+                              width: `${progressPercentage}%`,
+                            }}
+                          >
+                            {progressPercentage}%
+                          </div>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               </div>

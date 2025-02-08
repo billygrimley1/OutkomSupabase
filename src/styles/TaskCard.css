@@ -140,3 +140,64 @@
 .comments-button:hover {
   background: #e0e0e0;
 }
+
+/* ----------------------------------------- */
+/* Additional CSS for Subtasks Editor Styles */
+/* ----------------------------------------- */
+
+.subtasks-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.subtasks-edit-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.1em;
+  color: #007bff;
+  padding: 4px;
+}
+
+.subtasks-editor {
+  margin-top: 8px;
+}
+
+.subtask-editor-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.subtask-editor-item .editable-input {
+  flex-grow: 1;
+  margin-right: 4px;
+}
+
+.subtask-move-button,
+.subtask-remove-button {
+  margin-left: 2px;
+  padding: 2px 6px;
+  background: #f0f0f0;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8em;
+}
+
+.subtask-move-button:hover,
+.subtask-remove-button:hover {
+  background: #e0e0e0;
+}
+
+.subtasks-editor-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.cancel-button {
+  background: #ccc;
+}
