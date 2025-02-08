@@ -440,7 +440,24 @@ const TaskCard = ({ task, index, updateTask, isCompletedColumn }) => {
         )}
       </Draggable>
       {showComments && (
-        <TaskCommentsPanel task={task} onClose={() => setShowComments(false)} />
+        <TaskCommentsPanel
+          task={task}
+          onClose={() => setShowComments(false)}
+          onAddComment={async (newComment) => {
+            const updatedComments = [...(task.comments || []), newComment];
+            updateTask({ ...task, comments: updatedComments });
+            const { error } = await supabase
+              .from("tasks")
+              .update({
+                comments: updatedComments,
+                updated_at: new Date().toISOString(),
+              })
+              .eq("id", task.id);
+            if (error) {
+              console.error("Error updating task comments:", error.message);
+            }
+          }}
+        />
       )}
     </>
   );
