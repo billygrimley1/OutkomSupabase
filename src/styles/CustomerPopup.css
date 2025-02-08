@@ -1,0 +1,57 @@
+/* CustomerPopup.css */
+
+.customer-popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.customer-popup {
+  background: #ffffff;
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  max-width: 600px;
+  width: 90%;
+  position: relative;
+}
+
+.customer-popup h2 {
+  text-align: center;
+  font-size: 1.5em;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.customer-popup p {
+  font-size: 0.9em;
+  color: #333;
+  margin-bottom: 10px;
+}
+
+/* Styled close button matching the system's buttons */
+.close-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: #ffd700;
+  color: #333;
+  border: none;
+  border-radius: 8px;
+  padding: 5px 10px;
+  font-size: 1.2em;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.close-button:hover {
+  background: #e6c200;
+}

@@ -1,7 +1,7 @@
-// src/components/WorkflowKanban.js
 import React, { useState, useEffect } from "react";
 import { DragDropContext, Droppable } from "react-beautiful-dnd";
 import Card from "./Card";
+import CustomerPopup from "./CustomerPopup";
 import "../styles/Kanban.css";
 import { supabase } from "../utils/supabase";
 import ReactConfetti from "react-confetti";
@@ -23,6 +23,7 @@ const WorkflowKanban = () => {
     customers: {},
   });
   const [showConfetti, setShowConfetti] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
 
   useEffect(() => {
     async function fetchCustomers() {
@@ -37,8 +38,10 @@ const WorkflowKanban = () => {
           customers: {},
         };
         data.forEach((customer) => {
-          newBoard.customers[customer.id] = customer;
-          // Determine column by customer.status
+          // Convert the customer ID to a string for consistency.
+          const custId = String(customer.id);
+          newBoard.customers[custId] = customer;
+          // Determine which column based on customer.status.
           let columnKey = "column-1"; // default to Leads
           if (customer.status) {
             const statusLower = customer.status.toLowerCase();
@@ -54,7 +57,7 @@ const WorkflowKanban = () => {
               columnKey = "column-6";
             }
           }
-          newBoard.columns[columnKey].cardIds.push(String(customer.id));
+          newBoard.columns[columnKey].cardIds.push(custId);
         });
         setBoard(newBoard);
       }
@@ -62,26 +65,28 @@ const WorkflowKanban = () => {
     fetchCustomers();
   }, []);
 
-  const onDragEnd = async (result) => {
+  // onDragEnd runs synchronously.
+  const onDragEnd = (result) => {
     const { destination, source, draggableId } = result;
     if (!destination) return;
     if (
       destination.droppableId === source.droppableId &&
       destination.index === source.index
-    )
+    ) {
       return;
+    }
 
-    // Clone board state immutably
-    const newBoard = { ...board };
-    newBoard.columns = { ...board.columns };
+    const newBoard = { ...board, columns: { ...board.columns } };
 
     const sourceCol = { ...newBoard.columns[source.droppableId] };
     const destCol = { ...newBoard.columns[destination.droppableId] };
 
+    // Remove the dragged card from its source.
     const newSourceCardIds = Array.from(sourceCol.cardIds);
     newSourceCardIds.splice(source.index, 1);
     sourceCol.cardIds = newSourceCardIds;
 
+    // Insert the dragged card into the destination.
     const newDestCardIds = Array.from(destCol.cardIds);
     newDestCardIds.splice(destination.index, 0, draggableId);
     destCol.cardIds = newDestCardIds;
@@ -89,24 +94,43 @@ const WorkflowKanban = () => {
     newBoard.columns[source.droppableId] = sourceCol;
     newBoard.columns[destination.droppableId] = destCol;
 
-    // Update the customer's status in the card and in Supabase.
-    const customer = board.customers[draggableId];
+    // Update the customer’s local status.
+    const customer = newBoard.customers[draggableId];
     if (customer) {
-      customer.status = destCol.title;
-      const { error } = await supabase
-        .from("customers")
-        .update({ status: customer.status })
-        .eq("id", customer.id);
-      if (error) {
-        console.error("Error updating customer status:", error.message);
-      }
+      const newStatus = newBoard.columns[destination.droppableId].title;
+      customer.status = newStatus;
     }
 
     setBoard(newBoard);
 
-    if (destCol.title.toLowerCase().includes("adopting")) {
+    // Trigger asynchronous update to Supabase.
+    updateCustomerStatus(
+      draggableId,
+      newBoard.columns[destination.droppableId].title
+    );
+
+    if (
+      newBoard.columns[destination.droppableId].title
+        .toLowerCase()
+        .includes("adopting")
+    ) {
       setShowConfetti(true);
       setTimeout(() => setShowConfetti(false), 3000);
+    }
+  };
+
+  const updateCustomerStatus = (draggableId, newStatus) => {
+    const customer = board.customers[draggableId];
+    if (customer) {
+      supabase
+        .from("customers")
+        .update({ status: newStatus })
+        .eq("id", customer.id)
+        .then(({ error }) => {
+          if (error) {
+            console.error("Error updating customer status:", error.message);
+          }
+        });
     }
   };
 
@@ -119,7 +143,7 @@ const WorkflowKanban = () => {
             const column = board.columns[colKey];
             const cards = column.cardIds
               .map((id) => board.customers[id])
-              .filter((c) => c);
+              .filter(Boolean);
             return (
               <Droppable key={column.id} droppableId={column.id}>
                 {(provided) => (
@@ -133,7 +157,12 @@ const WorkflowKanban = () => {
                     </div>
                     <div className="card-list">
                       {cards.map((card, index) => (
-                        <Card key={card.id} card={card} index={index} />
+                        <Card
+                          key={card.id}
+                          card={card}
+                          index={index}
+                          onCardClick={setSelectedCustomer}
+                        />
                       ))}
                       {provided.placeholder}
                     </div>
@@ -144,6 +173,12 @@ const WorkflowKanban = () => {
           })}
         </div>
       </DragDropContext>
+      {selectedCustomer && (
+        <CustomerPopup
+          customer={selectedCustomer}
+          onClose={() => setSelectedCustomer(null)}
+        />
+      )}
     </div>
   );
 };
