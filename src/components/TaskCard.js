@@ -259,7 +259,14 @@ const TaskCard = ({ task, index, updateTask, isCompletedColumn }) => {
                 </>
               ) : (
                 <>
-                  <h4>{task.title}</h4>
+                  <h4>
+                    {task.title}
+                    {task.top_priority && (
+                      <span className="top-indicator" title="Top Priority">
+                        ★
+                      </span>
+                    )}
+                  </h4>
                   <p>
                     <strong>Due:</strong> {task.due_date}
                   </p>
