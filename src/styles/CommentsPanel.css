@@ -1,155 +1,140 @@
-/* src/styles/CommentsPanel.css */
+/* src/styles/TaskCommentsPanel.css */
 
-/* Overlay covering the entire screen with a semi-transparent dark background */
-.comments-overlay {
+.task-comments-overlay {
   position: fixed;
   top: 0;
   left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(4px);
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.3);
   display: flex;
-  justify-content: center;
   align-items: center;
+  justify-content: center;
   z-index: 1000;
+}
+
+.task-comments-modal {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  width: 400px;
+  max-width: 90%;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   animation: fadeIn 0.3s ease;
 }
 
 @keyframes fadeIn {
   from {
     opacity: 0;
+    transform: scale(0.9);
   }
   to {
     opacity: 1;
+    transform: scale(1);
   }
 }
 
-/* Modal container with rounded corners and a subtle shadow */
-.comments-modal {
-  background: #fff;
-  border-radius: 16px;
-  width: 90%;
-  max-width: 500px;
-  max-height: 80%;
-  overflow-y: auto;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  animation: slideUp 0.3s ease;
-  display: flex;
-  flex-direction: column;
-}
-
-@keyframes slideUp {
-  from {
-    transform: translateY(20px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-/* Header styling with gold accents */
-.comments-header {
+.task-comments-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 16px;
-  border-bottom: 1px solid #ddd;
-  background: #f7f7f7;
-  border-top-left-radius: 16px;
-  border-top-right-radius: 16px;
+  margin-bottom: 15px;
 }
 
-.comments-header h3 {
+.task-comments-header h3 {
   margin: 0;
   font-size: 1.2em;
   color: #333;
 }
 
-.close-button {
-  background: transparent;
+.close-comments-button {
+  background: #ffd700;
   border: none;
-  font-size: 1em;
-  color: #ffd700; /* Gold color */
+  border-radius: 4px;
+  padding: 5px 10px;
   cursor: pointer;
-  transition: color 0.2s ease;
+  font-size: 0.9em;
+  transition: background 0.2s ease;
 }
 
-.close-button:hover {
-  color: #e6c200; /* Darker gold on hover */
+.close-comments-button:hover {
+  background: #e6c200;
 }
 
-/* Body content styling */
-.comments-body {
-  padding: 16px;
-  flex: 1;
+.task-comments-body {
+  max-height: 300px;
+  overflow-y: auto;
 }
 
-.card-info p {
-  margin: 4px 0;
+.task-comment-item {
+  background: #f9f9f9;
+  border: 1px solid #eee;
+  border-radius: 4px;
+  padding: 8px;
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   font-size: 0.9em;
   color: #555;
 }
 
-/* Comments section styling */
-.comments-section {
-  margin-top: 16px;
-}
-
-.comments-section h4 {
-  margin: 0 0 8px 0;
-  font-size: 1em;
-  color: #333;
-}
-
-.comment-item {
-  background: #f2f2f2;
-  border-radius: 8px;
-  padding: 8px;
-  margin-bottom: 8px;
+.task-comment-item input[type="text"] {
+  flex-grow: 1;
+  margin-right: 5px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 4px 6px;
   font-size: 0.9em;
-  color: #333;
 }
 
-.no-comments {
-  font-size: 0.9em;
-  color: #999;
-}
-
-/* Add Comment Input and Button */
-.add-comment {
-  display: flex;
-  gap: 8px;
-  margin-top: 12px;
-}
-
-.add-comment input {
-  flex: 1;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 8px;
-  font-size: 0.9em;
-  outline: none;
-  transition: border 0.2s ease;
-}
-
-.add-comment input:focus {
-  border-color: #ffd700; /* Gold focus */
-}
-
-.add-comment button {
-  background: #ffd700; /* Gold button */
+.task-comment-item button {
+  background: #ffd700;
   border: none;
-  color: #fff;
-  border-radius: 8px;
-  padding: 8px 12px;
-  font-size: 0.9em;
+  border-radius: 4px;
+  padding: 4px 8px;
+  margin-left: 4px;
   cursor: pointer;
+  font-size: 0.8em;
   transition: background 0.2s ease;
 }
 
-.add-comment button:hover {
-  background: #e6c200; /* Darker gold on hover */
+.task-comment-item button:hover {
+  background: #e6c200;
+}
+
+.task-add-comment {
+  display: flex;
+  margin-top: 15px;
+}
+
+.task-add-comment input[type="text"] {
+  flex-grow: 1;
+  padding: 6px 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+
+.task-add-comment button {
+  background: #ffd700;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 10px;
+  margin-left: 8px;
+  cursor: pointer;
+  font-size: 0.9em;
+  transition: background 0.2s ease;
+}
+
+.task-add-comment button:hover {
+  background: #e6c200;
+}
+
+.no-comments {
+  font-style: italic;
+  color: #999;
+  text-align: center;
+  margin: 10px 0;
 }

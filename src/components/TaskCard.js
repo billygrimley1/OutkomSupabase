@@ -290,7 +290,7 @@ const TaskCard = ({ task, index, updateTask, isCompletedColumn }) => {
                       ? task.tags.join(", ")
                       : task.tags || ""}
                   </p>
-                  {/* Show progress bar in the collapsed/main view */}
+                  {/* Show progress bar in the main view */}
                   {totalSubtasks > 0 && (
                     <div className="progress-bar">
                       <div
@@ -445,6 +445,21 @@ const TaskCard = ({ task, index, updateTask, isCompletedColumn }) => {
           onClose={() => setShowComments(false)}
           onAddComment={async (newComment) => {
             const updatedComments = [...(task.comments || []), newComment];
+            updateTask({ ...task, comments: updatedComments });
+            const { error } = await supabase
+              .from("tasks")
+              .update({
+                comments: updatedComments,
+                updated_at: new Date().toISOString(),
+              })
+              .eq("id", task.id);
+            if (error) {
+              console.error("Error updating task comments:", error.message);
+            }
+          }}
+          onEditComment={async (index, newComment) => {
+            const updatedComments = [...(task.comments || [])];
+            updatedComments[index] = newComment;
             updateTask({ ...task, comments: updatedComments });
             const { error } = await supabase
               .from("tasks")
