@@ -290,15 +290,20 @@ const TaskCard = ({ task, index, updateTask, isCompletedColumn }) => {
                       ? task.tags.join(", ")
                       : task.tags || ""}
                   </p>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowComments(true);
-                    }}
-                    className="comments-button"
-                  >
-                    Comments
-                  </button>
+                  {/* Show progress bar in the collapsed/main view */}
+                  {totalSubtasks > 0 && (
+                    <div className="progress-bar">
+                      <div
+                        className="progress-fill"
+                        style={{
+                          background: isCompletedColumn ? "#32CD32" : "#ffd700",
+                          width: `${progressPercentage}%`,
+                        }}
+                      >
+                        {progressPercentage}%
+                      </div>
+                    </div>
+                  )}
                 </>
               )}
             </div>
@@ -416,21 +421,16 @@ const TaskCard = ({ task, index, updateTask, isCompletedColumn }) => {
                       ) : (
                         <p>No subtasks</p>
                       )}
-                      {totalSubtasks > 0 && (
-                        <div className="progress-bar">
-                          <div
-                            className="progress-fill"
-                            style={{
-                              background: isCompletedColumn
-                                ? "#32CD32"
-                                : "#ffd700",
-                              width: `${progressPercentage}%`,
-                            }}
-                          >
-                            {progressPercentage}%
-                          </div>
-                        </div>
-                      )}
+                      {/* Show comments button only when expanded */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowComments(true);
+                        }}
+                        className="comments-button"
+                      >
+                        Comments
+                      </button>
                     </>
                   )}
                 </div>
