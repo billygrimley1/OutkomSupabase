@@ -1,4 +1,3 @@
-// src/components/TaskCard.js
 import React, { useState, useEffect } from "react";
 import { Draggable } from "react-beautiful-dnd";
 import TaskCommentsPanel from "./TaskCommentsPanel";
@@ -25,7 +24,13 @@ const normalizeArray = (value) => {
   }
 };
 
-const TaskCard = ({ task, index, updateTask, isCompletedColumn }) => {
+const TaskCard = ({
+  task,
+  index,
+  updateTask,
+  deleteTask,
+  isCompletedColumn,
+}) => {
   // Normalize the assigned_to and tags fields.
   const assignedToArray = normalizeArray(task.assigned_to);
   const tagsArray = normalizeArray(task.tags);
@@ -106,6 +111,13 @@ const TaskCard = ({ task, index, updateTask, isCompletedColumn }) => {
     };
     updateTask(updatedTask);
     setEditMode(false);
+  };
+
+  // NEW: Delete handler that calls the passed-in deleteTask prop.
+  const handleDelete = () => {
+    if (window.confirm("Are you sure you want to delete this task?")) {
+      deleteTask(task.id);
+    }
   };
 
   // ===== Subtasks Editor Handlers =====
@@ -247,15 +259,26 @@ const TaskCard = ({ task, index, updateTask, isCompletedColumn }) => {
                     className="editable-input"
                     onClick={(e) => e.stopPropagation()}
                   />
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      saveEdits();
-                    }}
-                    className="save-button"
-                  >
-                    Save
-                  </button>
+                  <div className="edit-buttons">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        saveEdits();
+                      }}
+                      className="save-button"
+                    >
+                      Save
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete();
+                      }}
+                      className="delete-button"
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </>
               ) : (
                 <>
@@ -290,7 +313,6 @@ const TaskCard = ({ task, index, updateTask, isCompletedColumn }) => {
                       ? task.tags.join(", ")
                       : task.tags || ""}
                   </p>
-                  {/* Show progress bar in the main view */}
                   {totalSubtasks > 0 && (
                     <div className="progress-bar">
                       <div
@@ -421,7 +443,6 @@ const TaskCard = ({ task, index, updateTask, isCompletedColumn }) => {
                       ) : (
                         <p>No subtasks</p>
                       )}
-                      {/* Show comments button only when expanded */}
                       <button
                         onClick={(e) => {
                           e.stopPropagation();

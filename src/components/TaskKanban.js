@@ -1,4 +1,3 @@
-// src/components/TaskKanban.js
 import React, { useState, useEffect } from "react";
 import { DragDropContext, Droppable } from "react-beautiful-dnd";
 import TaskCard from "./TaskCard";
@@ -91,26 +90,21 @@ const TaskKanban = () => {
       newColumns[source.droppableId] = sourceCol;
       newColumns[destination.droppableId] = destCol;
 
-      // Create a new board object with the updated columns.
-      const newBoard = { ...prevBoard, columns: newColumns };
-
       // Update the task's local status.
       const task = prevBoard.tasks[draggableId];
       if (task) {
-        task.status = newBoard.columns[destination.droppableId].title;
+        task.status = newColumns[destination.droppableId].title;
       }
 
-      // If the task moved to the "Completed" column, trigger confetti.
+      // Trigger confetti if moved to "Completed"
       if (
-        newBoard.columns[destination.droppableId].title.toLowerCase() ===
-        "completed"
+        newColumns[destination.droppableId].title.toLowerCase() === "completed"
       ) {
         setShowConfetti(true);
         setTimeout(() => setShowConfetti(false), 3000);
       }
 
-      // Return the updated board state.
-      return newBoard;
+      return { ...prevBoard, columns: newColumns };
     });
 
     // Update the task's status in the database asynchronously.
@@ -140,9 +134,33 @@ const TaskKanban = () => {
     });
   };
 
+  // Delete a task from the board and the database.
+  const deleteTask = async (taskId) => {
+    // Remove the task from local state.
+    setBoard((prevBoard) => {
+      const newTasks = { ...prevBoard.tasks };
+      delete newTasks[taskId];
+      // Remove the task id from all columns.
+      const newColumns = { ...prevBoard.columns };
+      Object.keys(newColumns).forEach((colKey) => {
+        newColumns[colKey].cardIds = newColumns[colKey].cardIds.filter(
+          (id) => id !== taskId
+        );
+      });
+      return { ...prevBoard, tasks: newTasks, columns: newColumns };
+    });
+    // Delete the task from the database.
+    const { error } = await supabase.from("tasks").delete().eq("id", taskId);
+    if (error) {
+      console.error("Error deleting task:", error.message);
+    }
+  };
+
+  // Update sortTasks to filter out undefined tasks.
   const sortTasks = (taskIds) => {
     return taskIds
       .map((id) => board.tasks[id])
+      .filter((task) => task !== undefined)
       .sort((a, b) => {
         const order = { High: 3, Medium: 2, Low: 1 };
         if (order[b.priority] !== order[a.priority])
@@ -241,6 +259,7 @@ const TaskKanban = () => {
                           task={task}
                           index={index}
                           updateTask={updateTask}
+                          deleteTask={deleteTask}
                           isCompletedColumn={isCompletedColumn}
                         />
                       ))}
