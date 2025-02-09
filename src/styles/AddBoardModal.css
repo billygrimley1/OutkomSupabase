@@ -5,39 +5,71 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.6);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 1100;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .modal {
   background: #fff;
-  padding: 20px;
-  border-radius: 16px;
+  padding: 30px;
+  border-radius: 12px;
   width: 400px;
-  max-width: 90%;
+  max-width: 95%;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 .modal h3 {
-  margin-top: 0;
-  margin-bottom: 20px;
+  margin: 0 0 20px 0;
+  font-size: 1.4rem;
+  color: #333;
 }
 
 .modal form label {
   display: block;
-  margin-bottom: 10px;
-  font-weight: bold;
+  margin-bottom: 12px;
+  font-weight: 600;
+  color: #444;
 }
 
 .modal form input {
   width: 100%;
-  padding: 6px;
-  margin-top: 4px;
-  box-sizing: border-box;
+  padding: 10px 12px;
+  margin-top: 6px;
+  margin-bottom: 12px;
   border: 1px solid #ccc;
-  border-radius: 4px;
+  border-radius: 6px;
+  font-size: 1rem;
+  transition: border 0.2s ease;
+}
+
+.modal form input:focus {
+  border-color: #007bff;
+  outline: none;
 }
 
 .columns-section {
@@ -48,12 +80,46 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
+}
+
+.column-item input {
+  flex: 1;
+  padding: 8px 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  transition: border 0.2s ease;
+}
+
+.column-item input:focus {
+  border-color: #007bff;
+  outline: none;
+}
+
+.column-item button {
+  padding: 6px 10px;
+  border: none;
+  border-radius: 4px;
+  background: #f0f0f0;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.column-item button:hover {
+  background: #e0e0e0;
 }
 
 .radio-group {
   display: flex;
   gap: 10px;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.radio-group label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .modal-buttons {
@@ -62,6 +128,26 @@
 }
 
 .modal-buttons button {
-  margin-left: 10px;
-  padding: 6px 12px;
+  margin-left: 12px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  background: #007bff;
+  color: #fff;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.modal-buttons button:hover {
+  background: #0056b3;
+}
+
+.modal-buttons button:nth-child(2) {
+  background: #ccc;
+  color: #333;
+}
+
+.modal-buttons button:nth-child(2):hover {
+  background: #b3b3b3;
 }
