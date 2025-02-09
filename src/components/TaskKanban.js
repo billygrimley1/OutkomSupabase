@@ -8,70 +8,77 @@ import "../styles/Kanban.css";
 import { supabase } from "../utils/supabase";
 import ReactConfetti from "react-confetti";
 
-// Define default columns for the board.
-const defaultTaskColumns = {
-  "task-column-1": { id: "task-column-1", title: "Not started", cardIds: [] },
-  "task-column-2": { id: "task-column-2", title: "In progress", cardIds: [] },
-  "task-column-3": { id: "task-column-3", title: "Completed", cardIds: [] },
-};
-
-// Helper to create a fresh copy of the task columns.
-const createEmptyTaskColumns = () =>
-  Object.keys(defaultTaskColumns).reduce((acc, key) => {
-    acc[key] = { ...defaultTaskColumns[key], cardIds: [] };
-    return acc;
-  }, {});
-
 const TaskKanban = ({
+  board,
   filterCriteria,
-  setFilterCriteria,
   showFilterModal,
   setShowFilterModal,
 }) => {
-  const [board, setBoard] = useState({
-    id: "board-1",
-    name: "Task Board",
-    columns: createEmptyTaskColumns(),
-    tasks: {},
-  });
+  const [kanbanBoard, setKanbanBoard] = useState(null);
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
 
-  const currentUser = "Alice";
-
-  // Fetch tasks from the database.
+  // When the board or template modal flag changes, fetch tasks for the current board.
   useEffect(() => {
+    // Build initial columns using board.columns if available; otherwise, use default columns.
+    const initialColumns =
+      board && board.columns
+        ? board.columns.reduce((acc, col) => {
+            acc[col.id] = { id: col.id, title: col.title, cardIds: [] };
+            return acc;
+          }, {})
+        : {
+            "task-column-1": {
+              id: "task-column-1",
+              title: "Not started",
+              cardIds: [],
+            },
+            "task-column-2": {
+              id: "task-column-2",
+              title: "In progress",
+              cardIds: [],
+            },
+            "task-column-3": {
+              id: "task-column-3",
+              title: "Completed",
+              cardIds: [],
+            },
+          };
+
     async function fetchTasks() {
-      const { data, error } = await supabase.from("tasks").select();
+      let query = supabase.from("tasks").select();
+      if (board && board.id) {
+        query = query.eq("board_id", board.id);
+      }
+      const { data, error } = await query;
       if (error) {
         console.error("Error fetching tasks:", error.message);
       } else if (data) {
         const newBoard = {
-          id: "board-1",
-          name: "Task Board",
-          columns: createEmptyTaskColumns(),
+          id: board ? board.id : "board-1",
+          name: board ? board.name : "Task Board",
+          columns: initialColumns,
           tasks: {},
         };
         data.forEach((task) => {
           newBoard.tasks[task.id] = task;
-          let columnKey = "task-column-1"; // Default to "Not started"
-          if (task.status) {
-            const status = task.status.toLowerCase();
-            if (status.includes("in progress")) {
-              columnKey = "task-column-2";
-            } else if (status.includes("completed")) {
-              columnKey = "task-column-3";
-            }
-          }
+          // Use task.status (which now should be the column id) if it exists and is valid;
+          // otherwise, fall back to board.defaultColumn if set or the first available column.
+          const columnKey =
+            task.status && initialColumns[task.status]
+              ? task.status
+              : board && board.defaultColumn
+              ? board.defaultColumn
+              : Object.keys(initialColumns)[0];
           newBoard.columns[columnKey].cardIds.push(String(task.id));
         });
-        setBoard(newBoard);
+        setKanbanBoard(newBoard);
       }
     }
     fetchTasks();
-  }, [showTemplateModal]);
+  }, [board, showTemplateModal]);
 
-  // Handle drag and drop changes.
+  // Handles drag and drop changes.
   const onDragEnd = (result) => {
     const { destination, source, draggableId } = result;
     if (!destination) return;
@@ -81,7 +88,7 @@ const TaskKanban = ({
     )
       return;
 
-    setBoard((prevBoard) => {
+    setKanbanBoard((prevBoard) => {
       const newColumns = { ...prevBoard.columns };
       const sourceCol = { ...newColumns[source.droppableId] };
       const destCol = { ...newColumns[destination.droppableId] };
@@ -97,13 +104,17 @@ const TaskKanban = ({
       newColumns[source.droppableId] = sourceCol;
       newColumns[destination.droppableId] = destCol;
 
+      // Update the task status (using the column id).
       const task = prevBoard.tasks[draggableId];
       if (task) {
-        task.status = newColumns[destination.droppableId].title;
+        task.status = destination.droppableId;
       }
 
+      // If the new column is the board’s success column, trigger confetti.
       if (
-        newColumns[destination.droppableId].title.toLowerCase() === "completed"
+        board &&
+        board.columns &&
+        destination.droppableId === board.successColumn
       ) {
         setShowConfetti(true);
         setTimeout(() => setShowConfetti(false), 3000);
@@ -112,10 +123,9 @@ const TaskKanban = ({
       return { ...prevBoard, columns: newColumns };
     });
 
-    // Update the task's status in the database.
-    const task = board.tasks[draggableId];
+    const task = kanbanBoard.tasks[draggableId];
     if (task) {
-      const newStatus = board.columns[destination.droppableId].title;
+      const newStatus = destination.droppableId;
       supabase
         .from("tasks")
         .update({
@@ -133,16 +143,15 @@ const TaskKanban = ({
 
   // Update a task in local state.
   const updateTask = (updatedTask) => {
-    setBoard((prevBoard) => {
-      const newTasks = { ...prevBoard.tasks };
-      newTasks[updatedTask.id] = updatedTask;
+    setKanbanBoard((prevBoard) => {
+      const newTasks = { ...prevBoard.tasks, [updatedTask.id]: updatedTask };
       return { ...prevBoard, tasks: newTasks };
     });
   };
 
   // Delete a task both locally and in the database.
   const deleteTask = async (taskId) => {
-    setBoard((prevBoard) => {
+    setKanbanBoard((prevBoard) => {
       const newTasks = { ...prevBoard.tasks };
       delete newTasks[taskId];
       const newColumns = { ...prevBoard.columns };
@@ -162,7 +171,7 @@ const TaskKanban = ({
   // Sort tasks by priority and due date.
   const sortTasks = (taskIds) => {
     return taskIds
-      .map((id) => board.tasks[id])
+      .map((id) => kanbanBoard.tasks[id])
       .filter((task) => task !== undefined)
       .sort((a, b) => {
         const order = { High: 3, Medium: 2, Low: 1 };
@@ -175,7 +184,7 @@ const TaskKanban = ({
   // Filter tasks based on the provided filter criteria.
   const filterTaskIds = (cardIds) => {
     return cardIds.filter((id) => {
-      const task = board.tasks[id];
+      const task = kanbanBoard.tasks[id];
       if (!task) return false;
 
       // Filter by tags.
@@ -190,7 +199,7 @@ const TaskKanban = ({
         }
       }
 
-      // Filter by assigned to.
+      // Filter by assigned users.
       if (filterCriteria.assignedTo.length > 0) {
         const taskAssigned = Array.isArray(task.assigned_to)
           ? task.assigned_to
@@ -228,37 +237,9 @@ const TaskKanban = ({
     });
   };
 
-  // Apply a task template to create a new task.
-  const handleApplyTemplate = async (template) => {
-    const newTaskId = "task-" + Date.now();
-    const newTask = {
-      ...template,
-      id: newTaskId,
-      due_date: template.dueDate || "",
-      assigned_to: Array.isArray(template.assignedTo)
-        ? template.assignedTo
-        : [template.assignedTo],
-      tags: Array.isArray(template.tags) ? template.tags : [template.tags],
-      comments: [],
-      status: "Not started",
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
-    setBoard((prevBoard) => {
-      const newBoard = { ...prevBoard, tasks: { ...prevBoard.tasks } };
-      newBoard.tasks[newTaskId] = newTask;
-      newBoard.columns["task-column-1"].cardIds = [
-        ...newBoard.columns["task-column-1"].cardIds,
-        newTaskId,
-      ];
-      return newBoard;
-    });
-    const { error } = await supabase.from("tasks").insert(newTask);
-    if (error) {
-      console.error("Error inserting new task:", error.message);
-    }
-    setShowTemplateModal(false);
-  };
+  if (!kanbanBoard) {
+    return <div>Loading board...</div>;
+  }
 
   return (
     <div className="kanban-container">
@@ -281,12 +262,12 @@ const TaskKanban = ({
       </div>
       <DragDropContext onDragEnd={onDragEnd}>
         <div className="kanban-board">
-          {Object.keys(board.columns).map((colKey) => {
-            const column = board.columns[colKey];
+          {Object.keys(kanbanBoard.columns).map((colKey) => {
+            const column = kanbanBoard.columns[colKey];
             const filteredIds = filterTaskIds(column.cardIds);
             const sortedTasks = sortTasks(filteredIds);
-            const isCompletedColumn =
-              column.title.toLowerCase() === "completed";
+            // Optionally, you can check if this is the board’s success column for styling.
+            const isSuccessColumn = board && board.successColumn === colKey;
             return (
               <Droppable key={column.id} droppableId={column.id}>
                 {(provided) => (
@@ -306,9 +287,9 @@ const TaskKanban = ({
                           index={index}
                           updateTask={updateTask}
                           deleteTask={deleteTask}
-                          isCompletedColumn={isCompletedColumn}
+                          isCompletedColumn={isSuccessColumn}
                           onDeleteComment={async (taskId, commentIndex) => {
-                            const taskToUpdate = board.tasks[taskId];
+                            const taskToUpdate = kanbanBoard.tasks[taskId];
                             if (taskToUpdate) {
                               const updatedComments = [
                                 ...(taskToUpdate.comments || []),
@@ -347,7 +328,43 @@ const TaskKanban = ({
       </DragDropContext>
       {showTemplateModal && (
         <TaskTemplateModal
-          onApplyTemplate={handleApplyTemplate}
+          onApplyTemplate={async (template) => {
+            // Create a new task using the template data.
+            const newTaskId = "task-" + Date.now();
+            const newTask = {
+              ...template,
+              id: newTaskId,
+              due_date: template.dueDate || "",
+              assigned_to: Array.isArray(template.assignedTo)
+                ? template.assignedTo
+                : [template.assignedTo],
+              tags: Array.isArray(template.tags)
+                ? template.tags
+                : [template.tags],
+              comments: [],
+              board_id: board.id, // assign task to current board
+              status:
+                board && board.defaultColumn
+                  ? board.defaultColumn
+                  : Object.keys(kanbanBoard.columns)[0],
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            };
+            setKanbanBoard((prevBoard) => {
+              const newBoard = { ...prevBoard, tasks: { ...prevBoard.tasks } };
+              newBoard.tasks[newTaskId] = newTask;
+              newBoard.columns[newTask.status].cardIds = [
+                ...newBoard.columns[newTask.status].cardIds,
+                newTaskId,
+              ];
+              return newBoard;
+            });
+            const { error } = await supabase.from("tasks").insert(newTask);
+            if (error) {
+              console.error("Error inserting new task:", error.message);
+            }
+            setShowTemplateModal(false);
+          }}
           onClose={() => setShowTemplateModal(false)}
         />
       )}

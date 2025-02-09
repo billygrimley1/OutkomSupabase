@@ -3,7 +3,8 @@ import React, { useState } from "react";
 import LeftNav from "./components/LeftNav";
 import TopBar from "./components/TopBar";
 import WorkflowKanban from "./components/WorkflowKanban";
-import TaskKanban from "./components/TaskKanban";
+// Use the new multi‑board component for task actions.
+import MultiTaskKanban from "./components/MultiTaskKanban";
 import CustomerForm from "./components/CustomerForm";
 import UserForm from "./components/UserForm";
 import CustomFieldsManager from "./components/CustomFieldsManager";
@@ -14,10 +15,12 @@ import AddTaskModal from "./components/AddTaskModal";
 import "./styles/App.css";
 
 function App() {
+  // "view" manages which screen is active.
   const [view, setView] = useState("workflows");
+  // Modal flags for adding tasks and filtering.
   const [showAddTaskModal, setShowAddTaskModal] = useState(false);
-  // Lift filter state up here
   const [showFilterModal, setShowFilterModal] = useState(false);
+  // Lifted filter criteria state.
   const [filterCriteria, setFilterCriteria] = useState({
     tags: [],
     assignedTo: [],
@@ -26,13 +29,14 @@ function App() {
     dueDateEnd: "",
   });
 
+  // Render the appropriate view based on the current "view".
   const renderView = () => {
     switch (view) {
       case "workflows":
         return <WorkflowKanban />;
       case "actions":
         return (
-          <TaskKanban
+          <MultiTaskKanban
             filterCriteria={filterCriteria}
             setFilterCriteria={setFilterCriteria}
             showFilterModal={showFilterModal}
@@ -72,6 +76,7 @@ function App() {
         <AddTaskModal
           onClose={() => setShowAddTaskModal(false)}
           onTaskAdded={(newTask) => {
+            // You may refresh your board/tasks here if needed.
             setShowAddTaskModal(false);
           }}
         />

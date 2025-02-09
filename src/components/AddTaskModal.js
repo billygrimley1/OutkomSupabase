@@ -1,22 +1,18 @@
 // src/components/AddTaskModal.js
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "../styles/AddTaskModal.css";
 import { supabase } from "../utils/supabase";
 
-// Helper function to convert a comma-separated string into an array of integers.
+// Helper functions to parse comma‑separated numbers.
 const parseIntegerArray = (input) => {
   return input
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean)
-    .map((token) => {
-      const n = parseInt(token, 10);
-      return isNaN(n) ? null : n;
-    })
-    .filter((n) => n !== null);
+    .map((token) => parseInt(token, 10))
+    .filter((n) => !isNaN(n));
 };
 
-// Helper function to convert a string to an integer.
 const parseInteger = (input) => {
   const n = parseInt(input.trim(), 10);
   return isNaN(n) ? null : n;
@@ -27,18 +23,37 @@ const AddTaskModal = ({ onClose, onTaskAdded }) => {
     title: "",
     dueDate: "",
     priority: "Medium",
-    assignedTo: "", // Optional: numeric IDs (comma separated)
-    relatedCustomer: "", // Optional: numeric ID
+    assignedTo: "",
+    relatedCustomer: "",
     tags: "",
     topPriority: false,
     status: "Not started",
+    boardId: "", // New field for selecting board
   });
-
-  // State for subtasks (each subtask is an object with id, text, and completed flag).
   const [subtasks, setSubtasks] = useState([]);
   const [newSubtask, setNewSubtask] = useState("");
+  const [boards, setBoards] = useState([]);
 
-  // Update form fields.
+  // Fetch available task boards from the database.
+  useEffect(() => {
+    async function fetchBoards() {
+      const { data, error } = await supabase
+        .from("boards")
+        .select()
+        .eq("board_type", "task");
+      if (error) {
+        console.error("Error fetching boards:", error.message);
+      } else if (data) {
+        setBoards(data);
+        // Default to the first board if none is selected.
+        if (data.length > 0 && !formData.boardId) {
+          setFormData((prev) => ({ ...prev, boardId: data[0].id.toString() }));
+        }
+      }
+    }
+    fetchBoards();
+  }, [formData.boardId]);
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData({
@@ -47,11 +62,10 @@ const AddTaskModal = ({ onClose, onTaskAdded }) => {
     });
   };
 
-  // Add a new subtask locally.
   const handleAddSubtask = () => {
     if (newSubtask.trim() === "") return;
     const newSubtaskObj = {
-      id: Date.now().toString(), // temporary id for UI
+      id: Date.now().toString(),
       text: newSubtask.trim(),
       completed: false,
     };
@@ -59,15 +73,13 @@ const AddTaskModal = ({ onClose, onTaskAdded }) => {
     setNewSubtask("");
   };
 
-  // Remove a subtask from the list.
   const handleRemoveSubtask = (id) => {
     setSubtasks(subtasks.filter((subtask) => subtask.id !== id));
   };
 
-  // Handle form submission: insert the main task (with subtasks stored in the subtasks JSONB field).
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+    // Construct the new task object.
     const newTask = {
       title: formData.title,
       due_date: formData.dueDate,
@@ -85,8 +97,9 @@ const AddTaskModal = ({ onClose, onTaskAdded }) => {
             .map((s) => s.trim())
             .filter(Boolean)
         : [],
-      subtasks: subtasks, // Store subtasks as part of the task record.
+      subtasks: subtasks,
       status: formData.status,
+      board_id: formData.boardId ? parseInt(formData.boardId, 10) : null,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
@@ -153,7 +166,7 @@ const AddTaskModal = ({ onClose, onTaskAdded }) => {
               name="assignedTo"
               value={formData.assignedTo}
               onChange={handleChange}
-              placeholder="Optional (e.g., 1,2,3)"
+              placeholder="e.g., 1,2,3"
             />
           </label>
           <label>
@@ -163,7 +176,7 @@ const AddTaskModal = ({ onClose, onTaskAdded }) => {
               name="relatedCustomer"
               value={formData.relatedCustomer}
               onChange={handleChange}
-              placeholder="Optional (e.g., 4)"
+              placeholder="e.g., 4"
             />
           </label>
           <label>
@@ -183,6 +196,22 @@ const AddTaskModal = ({ onClose, onTaskAdded }) => {
               checked={formData.topPriority}
               onChange={handleChange}
             />
+          </label>
+          {/* New board selection drop-down */}
+          <label>
+            Board:
+            <select
+              name="boardId"
+              value={formData.boardId}
+              onChange={handleChange}
+              required
+            >
+              {boards.map((board) => (
+                <option key={board.id} value={board.id}>
+                  {board.name}
+                </option>
+              ))}
+            </select>
           </label>
           <div className="subtasks-section">
             <h3>Subtasks</h3>
