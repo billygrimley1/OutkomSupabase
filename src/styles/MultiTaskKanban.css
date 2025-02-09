@@ -1,0 +1,32 @@
+/* src/styles/MultiTaskKanban.css */
+.board-tabs {
+  display: flex;
+  gap: 5px;
+  border-bottom: 1px solid #ddd;
+  padding: 0 10px;
+  background: #f7f7f7;
+}
+
+.board-tab {
+  padding: 8px 12px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  border-top-left-radius: 4px;
+  border-top-right-radius: 4px;
+}
+
+.board-tab.active {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-bottom: none;
+}
+
+.board-tab.add-board-tab {
+  color: #007bff;
+  font-weight: 600;
+}
+
+.board-tab.edit-board-tab {
+  color: #28a745;
+  font-weight: 600;
+}

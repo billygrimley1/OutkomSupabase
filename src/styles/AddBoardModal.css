@@ -1,4 +1,4 @@
-/* src/styles/AddTaskModal.css */
+/* src/styles/AddBoardModal.css */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -15,12 +15,11 @@
 .modal {
   background: #fff;
   padding: 20px;
-  border-radius: 8px;
+  border-radius: 16px;
   width: 400px;
   max-width: 90%;
 }
 
-.modal h2,
 .modal h3 {
   margin-top: 0;
   margin-bottom: 20px;
@@ -32,9 +31,7 @@
   font-weight: bold;
 }
 
-.modal form input,
-.modal form select,
-.modal form textarea {
+.modal form input {
   width: 100%;
   padding: 6px;
   margin-top: 4px;
@@ -43,37 +40,20 @@
   border-radius: 4px;
 }
 
-/* Optional: Make select elements match input styling */
-select {
-  appearance: none;
-  background: #fff;
-}
-
-.subtasks-section {
+.columns-section {
   margin-top: 20px;
 }
 
-.new-subtask {
+.column-item {
   display: flex;
+  align-items: center;
   gap: 10px;
   margin-bottom: 10px;
 }
 
-.new-subtask input {
-  flex: 1;
-}
-
-.subtasks-list {
-  list-style: none;
-  padding-left: 0;
-}
-
-.subtasks-list li {
+.radio-group {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 4px 0;
-  border-bottom: 1px solid #eee;
+  gap: 10px;
 }
 
 .modal-buttons {
