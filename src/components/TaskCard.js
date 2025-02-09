@@ -1,3 +1,4 @@
+// src/components/TaskCard.js
 import React, { useState, useEffect } from "react";
 import { Draggable } from "react-beautiful-dnd";
 import TaskCommentsPanel from "./TaskCommentsPanel";
@@ -30,12 +31,12 @@ const TaskCard = ({
   updateTask,
   deleteTask,
   isCompletedColumn,
+  onDeleteComment, // New prop for deleting a comment
 }) => {
-  // Normalize the assigned_to and tags fields.
+  // Normalize assigned_to and tags fields.
   const assignedToArray = normalizeArray(task.assigned_to);
   const tagsArray = normalizeArray(task.tags);
 
-  // Use normalized values to create initial strings.
   const initialAssignedTo = assignedToArray.join(", ");
   const initialTags = tagsArray.join(", ");
 
@@ -113,7 +114,6 @@ const TaskCard = ({
     setEditMode(false);
   };
 
-  // NEW: Delete handler that calls the passed-in deleteTask prop.
   const handleDelete = () => {
     if (window.confirm("Are you sure you want to delete this task?")) {
       deleteTask(task.id);
@@ -493,6 +493,7 @@ const TaskCard = ({
               console.error("Error updating task comments:", error.message);
             }
           }}
+          onDeleteComment={(index) => onDeleteComment(task.id, index)}
         />
       )}
     </>

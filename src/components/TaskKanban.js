@@ -3,12 +3,12 @@ import React, { useState, useEffect } from "react";
 import { DragDropContext, Droppable } from "react-beautiful-dnd";
 import TaskCard from "./TaskCard";
 import TaskTemplateModal from "./TaskTemplateModal";
-import FilterModal from "./FilterModal"; // Ensure you have this component
+import FilterModal from "./FilterModal";
 import "../styles/Kanban.css";
 import { supabase } from "../utils/supabase";
 import ReactConfetti from "react-confetti";
 
-// Default columns definition
+// Define default columns for the board.
 const defaultTaskColumns = {
   "task-column-1": { id: "task-column-1", title: "Not started", cardIds: [] },
   "task-column-2": { id: "task-column-2", title: "In progress", cardIds: [] },
@@ -39,6 +39,7 @@ const TaskKanban = ({
 
   const currentUser = "Alice";
 
+  // Fetch tasks from the database.
   useEffect(() => {
     async function fetchTasks() {
       const { data, error } = await supabase.from("tasks").select();
@@ -70,6 +71,7 @@ const TaskKanban = ({
     fetchTasks();
   }, [showTemplateModal]);
 
+  // Handle drag and drop changes.
   const onDragEnd = (result) => {
     const { destination, source, draggableId } = result;
     if (!destination) return;
@@ -110,6 +112,7 @@ const TaskKanban = ({
       return { ...prevBoard, columns: newColumns };
     });
 
+    // Update the task's status in the database.
     const task = board.tasks[draggableId];
     if (task) {
       const newStatus = board.columns[destination.droppableId].title;
@@ -128,6 +131,7 @@ const TaskKanban = ({
     }
   };
 
+  // Update a task in local state.
   const updateTask = (updatedTask) => {
     setBoard((prevBoard) => {
       const newTasks = { ...prevBoard.tasks };
@@ -136,6 +140,7 @@ const TaskKanban = ({
     });
   };
 
+  // Delete a task both locally and in the database.
   const deleteTask = async (taskId) => {
     setBoard((prevBoard) => {
       const newTasks = { ...prevBoard.tasks };
@@ -154,6 +159,7 @@ const TaskKanban = ({
     }
   };
 
+  // Sort tasks by priority and due date.
   const sortTasks = (taskIds) => {
     return taskIds
       .map((id) => board.tasks[id])
@@ -166,6 +172,7 @@ const TaskKanban = ({
       });
   };
 
+  // Filter tasks based on the provided filter criteria.
   const filterTaskIds = (cardIds) => {
     return cardIds.filter((id) => {
       const task = board.tasks[id];
@@ -183,7 +190,7 @@ const TaskKanban = ({
         }
       }
 
-      // Filter by assigned-to.
+      // Filter by assigned to.
       if (filterCriteria.assignedTo.length > 0) {
         const taskAssigned = Array.isArray(task.assigned_to)
           ? task.assigned_to
@@ -221,6 +228,7 @@ const TaskKanban = ({
     });
   };
 
+  // Apply a task template to create a new task.
   const handleApplyTemplate = async (template) => {
     const newTaskId = "task-" + Date.now();
     const newTask = {
@@ -269,7 +277,6 @@ const TaskKanban = ({
           <button onClick={() => setShowTemplateModal(true)}>
             Add Task from Template
           </button>
-          {/* Removed local filter button—TopBar now controls filtering */}
         </div>
       </div>
       <DragDropContext onDragEnd={onDragEnd}>
@@ -300,6 +307,33 @@ const TaskKanban = ({
                           updateTask={updateTask}
                           deleteTask={deleteTask}
                           isCompletedColumn={isCompletedColumn}
+                          onDeleteComment={async (taskId, commentIndex) => {
+                            const taskToUpdate = board.tasks[taskId];
+                            if (taskToUpdate) {
+                              const updatedComments = [
+                                ...(taskToUpdate.comments || []),
+                              ];
+                              updatedComments.splice(commentIndex, 1);
+                              const updatedTask = {
+                                ...taskToUpdate,
+                                comments: updatedComments,
+                              };
+                              updateTask(updatedTask);
+                              const { error } = await supabase
+                                .from("tasks")
+                                .update({
+                                  comments: updatedComments,
+                                  updated_at: new Date().toISOString(),
+                                })
+                                .eq("id", taskId);
+                              if (error) {
+                                console.error(
+                                  "Error deleting comment:",
+                                  error.message
+                                );
+                              }
+                            }
+                          }}
                         />
                       ))}
                       {provided.placeholder}

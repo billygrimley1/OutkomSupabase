@@ -2,7 +2,13 @@
 import React, { useState } from "react";
 import "../styles/TaskCommentsPanel.css";
 
-const TaskCommentsPanel = ({ task, onClose, onAddComment, onEditComment }) => {
+const TaskCommentsPanel = ({
+  task,
+  onClose,
+  onAddComment,
+  onEditComment,
+  onDeleteComment,
+}) => {
   const [commentInput, setCommentInput] = useState("");
   const [editingIndex, setEditingIndex] = useState(null);
   const [editingText, setEditingText] = useState("");
@@ -25,6 +31,11 @@ const TaskCommentsPanel = ({ task, onClose, onAddComment, onEditComment }) => {
   const handleCancelEdit = () => {
     setEditingIndex(null);
     setEditingText("");
+  };
+
+  const handleDeleteComment = async (index) => {
+    // Optionally, you can add a confirmation step here before deleting.
+    await onDeleteComment(index);
   };
 
   return (
@@ -60,6 +71,9 @@ const TaskCommentsPanel = ({ task, onClose, onAddComment, onEditComment }) => {
                       }}
                     >
                       Edit
+                    </button>
+                    <button onClick={() => handleDeleteComment(idx)}>
+                      Delete
                     </button>
                   </>
                 )}
