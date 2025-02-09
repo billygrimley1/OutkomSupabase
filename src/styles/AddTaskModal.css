@@ -20,9 +20,16 @@
   max-width: 90%;
 }
 
+/* Optional: Style for a modal header (useful for Filter Modal) */
+.modal h3 {
+  margin-top: 0;
+  margin-bottom: 20px;
+}
+
 .modal form label {
   display: block;
   margin-bottom: 10px;
+  font-weight: bold;
 }
 
 .modal form input,
@@ -32,6 +39,8 @@
   padding: 6px;
   margin-top: 4px;
   box-sizing: border-box;
+  border: 1px solid #ccc;
+  border-radius: 4px;
 }
 
 .subtasks-section {
@@ -68,4 +77,21 @@
 
 .modal-buttons button {
   margin-left: 10px;
+}
+
+/* Additional styles for Filter Modal checkbox groups */
+.checkbox-group {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.checkbox-group label {
+  display: flex;
+  align-items: center;
+  font-weight: normal;
+}
+
+.checkbox-group input[type="checkbox"] {
+  margin-right: 4px;
 }

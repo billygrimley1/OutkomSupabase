@@ -3,10 +3,10 @@ import React from "react";
 import { FaPlus, FaFilter, FaClone, FaSlidersH } from "react-icons/fa";
 import "../styles/TopBar.css";
 
-const TopBar = ({ setView, currentView, onAddTask }) => {
+const TopBar = ({ setView, currentView, onAddTask, onOpenFilterModal }) => {
   const handleAdd = () => {
     if (currentView === "workflows") {
-      alert("Add new customer record (supabase integration prototype)");
+      alert("Add new customer record (prototype)");
     } else if (currentView === "actions") {
       if (onAddTask) {
         onAddTask();
@@ -15,7 +15,9 @@ const TopBar = ({ setView, currentView, onAddTask }) => {
   };
 
   const handleFilter = () => {
-    alert("Filter options (prototype)");
+    if (onOpenFilterModal) {
+      onOpenFilterModal();
+    }
   };
 
   const handleCloneBoard = () => {

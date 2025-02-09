@@ -16,13 +16,29 @@ import "./styles/App.css";
 function App() {
   const [view, setView] = useState("workflows");
   const [showAddTaskModal, setShowAddTaskModal] = useState(false);
+  // Lift filter state up here
+  const [showFilterModal, setShowFilterModal] = useState(false);
+  const [filterCriteria, setFilterCriteria] = useState({
+    tags: [],
+    assignedTo: [],
+    priority: [],
+    dueDateStart: "",
+    dueDateEnd: "",
+  });
 
   const renderView = () => {
     switch (view) {
       case "workflows":
         return <WorkflowKanban />;
       case "actions":
-        return <TaskKanban />;
+        return (
+          <TaskKanban
+            filterCriteria={filterCriteria}
+            setFilterCriteria={setFilterCriteria}
+            showFilterModal={showFilterModal}
+            setShowFilterModal={setShowFilterModal}
+          />
+        );
       case "customers":
         return <CustomerForm />;
       case "users":
@@ -44,11 +60,11 @@ function App() {
     <div className="app-container">
       <LeftNav setView={setView} currentView={view} />
       <div className="main-content">
-        {/* Pass onAddTask callback only for the Actions view */}
         <TopBar
           setView={setView}
           currentView={view}
           onAddTask={() => setShowAddTaskModal(true)}
+          onOpenFilterModal={() => setShowFilterModal(true)}
         />
         <div className="view-container">{renderView()}</div>
       </div>
@@ -56,7 +72,6 @@ function App() {
         <AddTaskModal
           onClose={() => setShowAddTaskModal(false)}
           onTaskAdded={(newTask) => {
-            // Optionally refresh tasks in TaskKanban if needed.
             setShowAddTaskModal(false);
           }}
         />

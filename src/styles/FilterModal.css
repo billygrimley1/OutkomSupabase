@@ -1,5 +1,4 @@
 /* src/styles/TopBar.css */
-
 .top-bar {
   display: flex;
   justify-content: space-between;
@@ -14,7 +13,6 @@
   font-size: 1.8em;
   font-weight: 700;
   color: #333; /* Dark text for readability */
-  /* Removed text-shadow and dark colors for a cleaner look */
 }
 
 .top-bar-actions button {

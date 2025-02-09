@@ -1,11 +1,14 @@
+// src/components/TaskKanban.js
 import React, { useState, useEffect } from "react";
 import { DragDropContext, Droppable } from "react-beautiful-dnd";
 import TaskCard from "./TaskCard";
 import TaskTemplateModal from "./TaskTemplateModal";
+import FilterModal from "./FilterModal"; // Ensure you have this component
 import "../styles/Kanban.css";
 import { supabase } from "../utils/supabase";
 import ReactConfetti from "react-confetti";
 
+// Default columns definition
 const defaultTaskColumns = {
   "task-column-1": { id: "task-column-1", title: "Not started", cardIds: [] },
   "task-column-2": { id: "task-column-2", title: "In progress", cardIds: [] },
@@ -19,7 +22,12 @@ const createEmptyTaskColumns = () =>
     return acc;
   }, {});
 
-const TaskKanban = () => {
+const TaskKanban = ({
+  filterCriteria,
+  setFilterCriteria,
+  showFilterModal,
+  setShowFilterModal,
+}) => {
   const [board, setBoard] = useState({
     id: "board-1",
     name: "Task Board",
@@ -28,9 +36,9 @@ const TaskKanban = () => {
   });
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
+
   const currentUser = "Alice";
 
-  // Fetch tasks from Supabase on mount or when the template modal is closed.
   useEffect(() => {
     async function fetchTasks() {
       const { data, error } = await supabase.from("tasks").select();
@@ -44,9 +52,8 @@ const TaskKanban = () => {
           tasks: {},
         };
         data.forEach((task) => {
-          // Save each task keyed by its id.
           newBoard.tasks[task.id] = task;
-          let columnKey = "task-column-1"; // default: Not started
+          let columnKey = "task-column-1"; // Default to "Not started"
           if (task.status) {
             const status = task.status.toLowerCase();
             if (status.includes("in progress")) {
@@ -63,7 +70,6 @@ const TaskKanban = () => {
     fetchTasks();
   }, [showTemplateModal]);
 
-  // Use a functional update in onDragEnd to ensure we're working with the latest board state.
   const onDragEnd = (result) => {
     const { destination, source, draggableId } = result;
     if (!destination) return;
@@ -74,7 +80,6 @@ const TaskKanban = () => {
       return;
 
     setBoard((prevBoard) => {
-      // Create new copies of the columns for a deep-ish clone.
       const newColumns = { ...prevBoard.columns };
       const sourceCol = { ...newColumns[source.droppableId] };
       const destCol = { ...newColumns[destination.droppableId] };
@@ -90,13 +95,11 @@ const TaskKanban = () => {
       newColumns[source.droppableId] = sourceCol;
       newColumns[destination.droppableId] = destCol;
 
-      // Update the task's local status.
       const task = prevBoard.tasks[draggableId];
       if (task) {
         task.status = newColumns[destination.droppableId].title;
       }
 
-      // Trigger confetti if moved to "Completed"
       if (
         newColumns[destination.droppableId].title.toLowerCase() === "completed"
       ) {
@@ -107,7 +110,6 @@ const TaskKanban = () => {
       return { ...prevBoard, columns: newColumns };
     });
 
-    // Update the task's status in the database asynchronously.
     const task = board.tasks[draggableId];
     if (task) {
       const newStatus = board.columns[destination.droppableId].title;
@@ -134,13 +136,10 @@ const TaskKanban = () => {
     });
   };
 
-  // Delete a task from the board and the database.
   const deleteTask = async (taskId) => {
-    // Remove the task from local state.
     setBoard((prevBoard) => {
       const newTasks = { ...prevBoard.tasks };
       delete newTasks[taskId];
-      // Remove the task id from all columns.
       const newColumns = { ...prevBoard.columns };
       Object.keys(newColumns).forEach((colKey) => {
         newColumns[colKey].cardIds = newColumns[colKey].cardIds.filter(
@@ -149,14 +148,12 @@ const TaskKanban = () => {
       });
       return { ...prevBoard, tasks: newTasks, columns: newColumns };
     });
-    // Delete the task from the database.
     const { error } = await supabase.from("tasks").delete().eq("id", taskId);
     if (error) {
       console.error("Error deleting task:", error.message);
     }
   };
 
-  // Update sortTasks to filter out undefined tasks.
   const sortTasks = (taskIds) => {
     return taskIds
       .map((id) => board.tasks[id])
@@ -170,8 +167,58 @@ const TaskKanban = () => {
   };
 
   const filterTaskIds = (cardIds) => {
-    // No additional filtering in this example.
-    return cardIds;
+    return cardIds.filter((id) => {
+      const task = board.tasks[id];
+      if (!task) return false;
+
+      // Filter by tags.
+      if (filterCriteria.tags.length > 0) {
+        const taskTags = Array.isArray(task.tags)
+          ? task.tags
+          : task.tags
+          ? [task.tags]
+          : [];
+        if (!filterCriteria.tags.some((tag) => taskTags.includes(tag))) {
+          return false;
+        }
+      }
+
+      // Filter by assigned-to.
+      if (filterCriteria.assignedTo.length > 0) {
+        const taskAssigned = Array.isArray(task.assigned_to)
+          ? task.assigned_to
+          : task.assigned_to
+          ? [task.assigned_to]
+          : [];
+        if (
+          !filterCriteria.assignedTo.some((assignee) =>
+            taskAssigned.includes(assignee)
+          )
+        ) {
+          return false;
+        }
+      }
+
+      // Filter by priority.
+      if (
+        filterCriteria.priority.length > 0 &&
+        !filterCriteria.priority.includes(task.priority)
+      ) {
+        return false;
+      }
+
+      // Filter by due date range.
+      if (filterCriteria.dueDateStart) {
+        if (new Date(task.due_date) < new Date(filterCriteria.dueDateStart))
+          return false;
+      }
+      if (filterCriteria.dueDateEnd) {
+        if (new Date(task.due_date) > new Date(filterCriteria.dueDateEnd))
+          return false;
+      }
+
+      return true;
+    });
   };
 
   const handleApplyTemplate = async (template) => {
@@ -217,20 +264,12 @@ const TaskKanban = () => {
               <option value="my">My Tasks</option>
             </select>
           </label>
-          <label>
-            Filter by Priority:
-            <select value={""} onChange={() => {}}>
-              <option value="">All</option>
-              <option value="High">High</option>
-              <option value="Medium">Medium</option>
-              <option value="Low">Low</option>
-            </select>
-          </label>
         </div>
         <div className="board-buttons">
           <button onClick={() => setShowTemplateModal(true)}>
             Add Task from Template
           </button>
+          {/* Removed local filter button—TopBar now controls filtering */}
         </div>
       </div>
       <DragDropContext onDragEnd={onDragEnd}>
@@ -276,6 +315,16 @@ const TaskKanban = () => {
         <TaskTemplateModal
           onApplyTemplate={handleApplyTemplate}
           onClose={() => setShowTemplateModal(false)}
+        />
+      )}
+      {showFilterModal && (
+        <FilterModal
+          initialFilters={filterCriteria}
+          onApply={(filters) => {
+            setFilterCriteria(filters);
+            setShowFilterModal(false);
+          }}
+          onClose={() => setShowFilterModal(false)}
         />
       )}
     </div>
