@@ -8,70 +8,117 @@ import "../styles/Kanban.css";
 import { supabase } from "../utils/supabase";
 import ReactConfetti from "react-confetti";
 
-// Define default columns for the board.
-const defaultTaskColumns = {
-  "task-column-1": { id: "task-column-1", title: "Not started", cardIds: [] },
-  "task-column-2": { id: "task-column-2", title: "In progress", cardIds: [] },
-  "task-column-3": { id: "task-column-3", title: "Completed", cardIds: [] },
-};
-
-// Helper to create a fresh copy of the task columns.
-const createEmptyTaskColumns = () =>
-  Object.keys(defaultTaskColumns).reduce((acc, key) => {
-    acc[key] = { ...defaultTaskColumns[key], cardIds: [] };
-    return acc;
-  }, {});
-
 const TaskKanban = ({
+  board,
   filterCriteria,
-  setFilterCriteria,
   showFilterModal,
   setShowFilterModal,
+  tasksRefresh,
 }) => {
-  const [board, setBoard] = useState({
-    id: "board-1",
-    name: "Task Board",
-    columns: createEmptyTaskColumns(),
-    tasks: {},
-  });
+  const [kanbanBoard, setKanbanBoard] = useState(null);
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
 
-  const currentUser = "Alice";
-
-  // Fetch tasks from the database.
+  // Fetch tasks and build board state.
   useEffect(() => {
+    const initialColumns =
+      board && board.columns
+        ? board.columns.reduce((acc, col) => {
+            acc[col.id] = { id: col.id, title: col.title, cardIds: [] };
+            return acc;
+          }, {})
+        : {
+            "task-column-1": {
+              id: "task-column-1",
+              title: "Not started",
+              cardIds: [],
+            },
+            "task-column-2": {
+              id: "task-column-2",
+              title: "In progress",
+              cardIds: [],
+            },
+            "task-column-3": {
+              id: "task-column-3",
+              title: "Completed",
+              cardIds: [],
+            },
+          };
+
     async function fetchTasks() {
-      const { data, error } = await supabase.from("tasks").select();
+      let query = supabase.from("tasks").select();
+      if (board && board.id) {
+        query = query.eq("board_id", board.id);
+      }
+      const { data, error } = await query;
       if (error) {
         console.error("Error fetching tasks:", error.message);
       } else if (data) {
         const newBoard = {
-          id: "board-1",
-          name: "Task Board",
-          columns: createEmptyTaskColumns(),
+          id: board ? board.id : "board-1",
+          name: board ? board.name : "Task Board",
+          columns: { ...initialColumns },
           tasks: {},
         };
         data.forEach((task) => {
           newBoard.tasks[task.id] = task;
-          let columnKey = "task-column-1"; // Default to "Not started"
-          if (task.status) {
-            const status = task.status.toLowerCase();
-            if (status.includes("in progress")) {
-              columnKey = "task-column-2";
-            } else if (status.includes("completed")) {
-              columnKey = "task-column-3";
-            }
-          }
+          const columnKey =
+            task.status && initialColumns[task.status]
+              ? task.status
+              : board && board.defaultColumn
+              ? board.defaultColumn
+              : Object.keys(initialColumns)[0];
           newBoard.columns[columnKey].cardIds.push(String(task.id));
         });
-        setBoard(newBoard);
+        setKanbanBoard(newBoard);
       }
     }
     fetchTasks();
-  }, [showTemplateModal]);
+  }, [board, showTemplateModal, tasksRefresh]);
 
-  // Handle drag and drop changes.
+  // updateTask: update local board state with an updated task.
+  const updateTask = (updatedTask) => {
+    setKanbanBoard((prevBoard) => {
+      if (!prevBoard) return prevBoard;
+      return {
+        ...prevBoard,
+        tasks: { ...prevBoard.tasks, [updatedTask.id]: updatedTask },
+      };
+    });
+  };
+
+  // deleteTask: remove the task from local state and delete it from the DB.
+  const deleteTask = async (taskId) => {
+    // Update local state: remove task from tasks and from each column's cardIds.
+    setKanbanBoard((prevBoard) => {
+      if (!prevBoard) return prevBoard;
+      const updatedTasks = { ...prevBoard.tasks };
+      delete updatedTasks[taskId];
+      const updatedColumns = { ...prevBoard.columns };
+      Object.keys(updatedColumns).forEach((colKey) => {
+        updatedColumns[colKey].cardIds = updatedColumns[colKey].cardIds.filter(
+          (id) => id !== String(taskId)
+        );
+      });
+      return { ...prevBoard, tasks: updatedTasks, columns: updatedColumns };
+    });
+    // Convert taskId to number if necessary (since tasks.id is SERIAL).
+    const numericTaskId =
+      typeof taskId === "number" ? taskId : parseInt(taskId, 10);
+    // Delete from the DB.
+    const { error } = await supabase
+      .from("tasks")
+      .delete()
+      .eq("id", numericTaskId)
+      .select();
+    if (error) {
+      console.error("Error deleting task:", error.message);
+    } else {
+      console.log("Task deleted successfully");
+    }
+  };
+
+  // onDragEnd: update local state and then update the DB.
   const onDragEnd = (result) => {
     const { destination, source, draggableId } = result;
     if (!destination) return;
@@ -81,7 +128,7 @@ const TaskKanban = ({
     )
       return;
 
-    setBoard((prevBoard) => {
+    setKanbanBoard((prevBoard) => {
       const newColumns = { ...prevBoard.columns };
       const sourceCol = { ...newColumns[source.droppableId] };
       const destCol = { ...newColumns[destination.droppableId] };
@@ -97,29 +144,29 @@ const TaskKanban = ({
       newColumns[source.droppableId] = sourceCol;
       newColumns[destination.droppableId] = destCol;
 
-      const task = prevBoard.tasks[draggableId];
-      if (task) {
-        task.status = newColumns[destination.droppableId].title;
-      }
+      const updatedTask = {
+        ...prevBoard.tasks[draggableId],
+        status: destination.droppableId,
+      };
+      const newTasks = { ...prevBoard.tasks, [draggableId]: updatedTask };
 
       if (
-        newColumns[destination.droppableId].title.toLowerCase() === "completed"
+        board &&
+        board.columns &&
+        destination.droppableId === board.successColumn
       ) {
         setShowConfetti(true);
         setTimeout(() => setShowConfetti(false), 3000);
       }
-
-      return { ...prevBoard, columns: newColumns };
+      return { ...prevBoard, columns: newColumns, tasks: newTasks };
     });
 
-    // Update the task's status in the database.
-    const task = board.tasks[draggableId];
+    const task = kanbanBoard.tasks[draggableId];
     if (task) {
-      const newStatus = board.columns[destination.droppableId].title;
       supabase
         .from("tasks")
         .update({
-          status: newStatus,
+          status: destination.droppableId,
           updated_at: new Date().toISOString(),
         })
         .eq("id", task.id)
@@ -131,134 +178,9 @@ const TaskKanban = ({
     }
   };
 
-  // Update a task in local state.
-  const updateTask = (updatedTask) => {
-    setBoard((prevBoard) => {
-      const newTasks = { ...prevBoard.tasks };
-      newTasks[updatedTask.id] = updatedTask;
-      return { ...prevBoard, tasks: newTasks };
-    });
-  };
-
-  // Delete a task both locally and in the database.
-  const deleteTask = async (taskId) => {
-    setBoard((prevBoard) => {
-      const newTasks = { ...prevBoard.tasks };
-      delete newTasks[taskId];
-      const newColumns = { ...prevBoard.columns };
-      Object.keys(newColumns).forEach((colKey) => {
-        newColumns[colKey].cardIds = newColumns[colKey].cardIds.filter(
-          (id) => id !== taskId
-        );
-      });
-      return { ...prevBoard, tasks: newTasks, columns: newColumns };
-    });
-    const { error } = await supabase.from("tasks").delete().eq("id", taskId);
-    if (error) {
-      console.error("Error deleting task:", error.message);
-    }
-  };
-
-  // Sort tasks by priority and due date.
-  const sortTasks = (taskIds) => {
-    return taskIds
-      .map((id) => board.tasks[id])
-      .filter((task) => task !== undefined)
-      .sort((a, b) => {
-        const order = { High: 3, Medium: 2, Low: 1 };
-        if (order[b.priority] !== order[a.priority])
-          return order[b.priority] - order[a.priority];
-        return new Date(a.due_date) - new Date(b.due_date);
-      });
-  };
-
-  // Filter tasks based on the provided filter criteria.
-  const filterTaskIds = (cardIds) => {
-    return cardIds.filter((id) => {
-      const task = board.tasks[id];
-      if (!task) return false;
-
-      // Filter by tags.
-      if (filterCriteria.tags.length > 0) {
-        const taskTags = Array.isArray(task.tags)
-          ? task.tags
-          : task.tags
-          ? [task.tags]
-          : [];
-        if (!filterCriteria.tags.some((tag) => taskTags.includes(tag))) {
-          return false;
-        }
-      }
-
-      // Filter by assigned to.
-      if (filterCriteria.assignedTo.length > 0) {
-        const taskAssigned = Array.isArray(task.assigned_to)
-          ? task.assigned_to
-          : task.assigned_to
-          ? [task.assigned_to]
-          : [];
-        if (
-          !filterCriteria.assignedTo.some((assignee) =>
-            taskAssigned.includes(assignee)
-          )
-        ) {
-          return false;
-        }
-      }
-
-      // Filter by priority.
-      if (
-        filterCriteria.priority.length > 0 &&
-        !filterCriteria.priority.includes(task.priority)
-      ) {
-        return false;
-      }
-
-      // Filter by due date range.
-      if (filterCriteria.dueDateStart) {
-        if (new Date(task.due_date) < new Date(filterCriteria.dueDateStart))
-          return false;
-      }
-      if (filterCriteria.dueDateEnd) {
-        if (new Date(task.due_date) > new Date(filterCriteria.dueDateEnd))
-          return false;
-      }
-
-      return true;
-    });
-  };
-
-  // Apply a task template to create a new task.
-  const handleApplyTemplate = async (template) => {
-    const newTaskId = "task-" + Date.now();
-    const newTask = {
-      ...template,
-      id: newTaskId,
-      due_date: template.dueDate || "",
-      assigned_to: Array.isArray(template.assignedTo)
-        ? template.assignedTo
-        : [template.assignedTo],
-      tags: Array.isArray(template.tags) ? template.tags : [template.tags],
-      comments: [],
-      status: "Not started",
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
-    setBoard((prevBoard) => {
-      const newBoard = { ...prevBoard, tasks: { ...prevBoard.tasks } };
-      newBoard.tasks[newTaskId] = newTask;
-      newBoard.columns["task-column-1"].cardIds = [
-        ...newBoard.columns["task-column-1"].cardIds,
-        newTaskId,
-      ];
-      return newBoard;
-    });
-    const { error } = await supabase.from("tasks").insert(newTask);
-    if (error) {
-      console.error("Error inserting new task:", error.message);
-    }
-    setShowTemplateModal(false);
-  };
+  if (!kanbanBoard) {
+    return <div>Loading board...</div>;
+  }
 
   return (
     <div className="kanban-container">
@@ -267,7 +189,7 @@ const TaskKanban = ({
         <div className="board-management">
           <label>
             View:
-            <select value={"all"} onChange={() => {}}>
+            <select value="all" onChange={() => {}}>
               <option value="all">All Tasks</option>
               <option value="my">My Tasks</option>
             </select>
@@ -281,12 +203,8 @@ const TaskKanban = ({
       </div>
       <DragDropContext onDragEnd={onDragEnd}>
         <div className="kanban-board">
-          {Object.keys(board.columns).map((colKey) => {
-            const column = board.columns[colKey];
-            const filteredIds = filterTaskIds(column.cardIds);
-            const sortedTasks = sortTasks(filteredIds);
-            const isCompletedColumn =
-              column.title.toLowerCase() === "completed";
+          {Object.keys(kanbanBoard.columns).map((colKey) => {
+            const column = kanbanBoard.columns[colKey];
             return (
               <Droppable key={column.id} droppableId={column.id}>
                 {(provided) => (
@@ -299,43 +217,21 @@ const TaskKanban = ({
                       <h3>{column.title}</h3>
                     </div>
                     <div className="card-list">
-                      {sortedTasks.map((task, index) => (
-                        <TaskCard
-                          key={task.id}
-                          task={task}
-                          index={index}
-                          updateTask={updateTask}
-                          deleteTask={deleteTask}
-                          isCompletedColumn={isCompletedColumn}
-                          onDeleteComment={async (taskId, commentIndex) => {
-                            const taskToUpdate = board.tasks[taskId];
-                            if (taskToUpdate) {
-                              const updatedComments = [
-                                ...(taskToUpdate.comments || []),
-                              ];
-                              updatedComments.splice(commentIndex, 1);
-                              const updatedTask = {
-                                ...taskToUpdate,
-                                comments: updatedComments,
-                              };
-                              updateTask(updatedTask);
-                              const { error } = await supabase
-                                .from("tasks")
-                                .update({
-                                  comments: updatedComments,
-                                  updated_at: new Date().toISOString(),
-                                })
-                                .eq("id", taskId);
-                              if (error) {
-                                console.error(
-                                  "Error deleting comment:",
-                                  error.message
-                                );
-                              }
-                            }
-                          }}
-                        />
-                      ))}
+                      {column.cardIds.map((taskId, index) => {
+                        const task = kanbanBoard.tasks[taskId];
+                        return (
+                          task && (
+                            <TaskCard
+                              key={task.id}
+                              task={task}
+                              index={index}
+                              updateTask={updateTask}
+                              deleteTask={deleteTask}
+                              isCompletedColumn={false} // Adjust as needed
+                            />
+                          )
+                        );
+                      })}
                       {provided.placeholder}
                     </div>
                   </div>
@@ -347,7 +243,42 @@ const TaskKanban = ({
       </DragDropContext>
       {showTemplateModal && (
         <TaskTemplateModal
-          onApplyTemplate={handleApplyTemplate}
+          onApplyTemplate={async (template) => {
+            const newTaskId = "task-" + Date.now();
+            const newTask = {
+              ...template,
+              id: newTaskId,
+              due_date: template.dueDate || "",
+              assigned_to: Array.isArray(template.assignedTo)
+                ? template.assignedTo
+                : [template.assignedTo],
+              tags: Array.isArray(template.tags)
+                ? template.tags
+                : [template.tags],
+              comments: [],
+              board_id: board.id,
+              status:
+                board && board.defaultColumn
+                  ? board.defaultColumn
+                  : Object.keys(kanbanBoard.columns)[0],
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            };
+            setKanbanBoard((prevBoard) => {
+              const newBoard = { ...prevBoard, tasks: { ...prevBoard.tasks } };
+              newBoard.tasks[newTaskId] = newTask;
+              newBoard.columns[newTask.status].cardIds = [
+                ...newBoard.columns[newTask.status].cardIds,
+                newTaskId,
+              ];
+              return newBoard;
+            });
+            const { error } = await supabase.from("tasks").insert(newTask);
+            if (error) {
+              console.error("Error inserting new task:", error.message);
+            }
+            setShowTemplateModal(false);
+          }}
           onClose={() => setShowTemplateModal(false)}
         />
       )}
