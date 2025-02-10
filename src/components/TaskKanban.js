@@ -13,14 +13,14 @@ const TaskKanban = ({
   filterCriteria,
   showFilterModal,
   setShowFilterModal,
+  tasksRefresh,
 }) => {
   const [kanbanBoard, setKanbanBoard] = useState(null);
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
 
-  // When the board or template modal flag changes, fetch tasks for the current board.
+  // Fetch tasks for the board and build a board object with columns and tasks.
   useEffect(() => {
-    // Build initial columns using board.columns if available; otherwise, use default columns.
     const initialColumns =
       board && board.columns
         ? board.columns.reduce((acc, col) => {
@@ -57,13 +57,12 @@ const TaskKanban = ({
         const newBoard = {
           id: board ? board.id : "board-1",
           name: board ? board.name : "Task Board",
-          columns: initialColumns,
+          columns: { ...initialColumns },
           tasks: {},
         };
         data.forEach((task) => {
           newBoard.tasks[task.id] = task;
-          // Use task.status (which now should be the column id) if it exists and is valid;
-          // otherwise, fall back to board.defaultColumn if set or the first available column.
+          // Determine the column for the task:
           const columnKey =
             task.status && initialColumns[task.status]
               ? task.status
@@ -76,9 +75,9 @@ const TaskKanban = ({
       }
     }
     fetchTasks();
-  }, [board, showTemplateModal]);
+  }, [board, showTemplateModal, tasksRefresh]);
 
-  // Handles drag and drop changes.
+  // Fully implement onDragEnd to update state and database.
   const onDragEnd = (result) => {
     const { destination, source, draggableId } = result;
     if (!destination) return;
@@ -88,6 +87,7 @@ const TaskKanban = ({
     )
       return;
 
+    // Update local state
     setKanbanBoard((prevBoard) => {
       const newColumns = { ...prevBoard.columns };
       const sourceCol = { ...newColumns[source.droppableId] };
@@ -104,13 +104,14 @@ const TaskKanban = ({
       newColumns[source.droppableId] = sourceCol;
       newColumns[destination.droppableId] = destCol;
 
-      // Update the task status (using the column id).
-      const task = prevBoard.tasks[draggableId];
-      if (task) {
-        task.status = destination.droppableId;
-      }
+      // Update the task's status locally
+      const updatedTask = {
+        ...prevBoard.tasks[draggableId],
+        status: destination.droppableId,
+      };
+      const newTasks = { ...prevBoard.tasks, [draggableId]: updatedTask };
 
-      // If the new column is the board’s success column, trigger confetti.
+      // Trigger confetti if moved to the success column
       if (
         board &&
         board.columns &&
@@ -120,16 +121,16 @@ const TaskKanban = ({
         setTimeout(() => setShowConfetti(false), 3000);
       }
 
-      return { ...prevBoard, columns: newColumns };
+      return { ...prevBoard, columns: newColumns, tasks: newTasks };
     });
 
+    // Update the task's status in the database
     const task = kanbanBoard.tasks[draggableId];
     if (task) {
-      const newStatus = destination.droppableId;
       supabase
         .from("tasks")
         .update({
-          status: newStatus,
+          status: destination.droppableId,
           updated_at: new Date().toISOString(),
         })
         .eq("id", task.id)
@@ -139,102 +140,6 @@ const TaskKanban = ({
           }
         });
     }
-  };
-
-  // Update a task in local state.
-  const updateTask = (updatedTask) => {
-    setKanbanBoard((prevBoard) => {
-      const newTasks = { ...prevBoard.tasks, [updatedTask.id]: updatedTask };
-      return { ...prevBoard, tasks: newTasks };
-    });
-  };
-
-  // Delete a task both locally and in the database.
-  const deleteTask = async (taskId) => {
-    setKanbanBoard((prevBoard) => {
-      const newTasks = { ...prevBoard.tasks };
-      delete newTasks[taskId];
-      const newColumns = { ...prevBoard.columns };
-      Object.keys(newColumns).forEach((colKey) => {
-        newColumns[colKey].cardIds = newColumns[colKey].cardIds.filter(
-          (id) => id !== taskId
-        );
-      });
-      return { ...prevBoard, tasks: newTasks, columns: newColumns };
-    });
-    const { error } = await supabase.from("tasks").delete().eq("id", taskId);
-    if (error) {
-      console.error("Error deleting task:", error.message);
-    }
-  };
-
-  // Sort tasks by priority and due date.
-  const sortTasks = (taskIds) => {
-    return taskIds
-      .map((id) => kanbanBoard.tasks[id])
-      .filter((task) => task !== undefined)
-      .sort((a, b) => {
-        const order = { High: 3, Medium: 2, Low: 1 };
-        if (order[b.priority] !== order[a.priority])
-          return order[b.priority] - order[a.priority];
-        return new Date(a.due_date) - new Date(b.due_date);
-      });
-  };
-
-  // Filter tasks based on the provided filter criteria.
-  const filterTaskIds = (cardIds) => {
-    return cardIds.filter((id) => {
-      const task = kanbanBoard.tasks[id];
-      if (!task) return false;
-
-      // Filter by tags.
-      if (filterCriteria.tags.length > 0) {
-        const taskTags = Array.isArray(task.tags)
-          ? task.tags
-          : task.tags
-          ? [task.tags]
-          : [];
-        if (!filterCriteria.tags.some((tag) => taskTags.includes(tag))) {
-          return false;
-        }
-      }
-
-      // Filter by assigned users.
-      if (filterCriteria.assignedTo.length > 0) {
-        const taskAssigned = Array.isArray(task.assigned_to)
-          ? task.assigned_to
-          : task.assigned_to
-          ? [task.assigned_to]
-          : [];
-        if (
-          !filterCriteria.assignedTo.some((assignee) =>
-            taskAssigned.includes(assignee)
-          )
-        ) {
-          return false;
-        }
-      }
-
-      // Filter by priority.
-      if (
-        filterCriteria.priority.length > 0 &&
-        !filterCriteria.priority.includes(task.priority)
-      ) {
-        return false;
-      }
-
-      // Filter by due date range.
-      if (filterCriteria.dueDateStart) {
-        if (new Date(task.due_date) < new Date(filterCriteria.dueDateStart))
-          return false;
-      }
-      if (filterCriteria.dueDateEnd) {
-        if (new Date(task.due_date) > new Date(filterCriteria.dueDateEnd))
-          return false;
-      }
-
-      return true;
-    });
   };
 
   if (!kanbanBoard) {
@@ -261,13 +166,10 @@ const TaskKanban = ({
         </div>
       </div>
       <DragDropContext onDragEnd={onDragEnd}>
+        {/* This container ensures columns are displayed side-by-side */}
         <div className="kanban-board">
           {Object.keys(kanbanBoard.columns).map((colKey) => {
             const column = kanbanBoard.columns[colKey];
-            const filteredIds = filterTaskIds(column.cardIds);
-            const sortedTasks = sortTasks(filteredIds);
-            // Optionally, you can check if this is the board’s success column for styling.
-            const isSuccessColumn = board && board.successColumn === colKey;
             return (
               <Droppable key={column.id} droppableId={column.id}>
                 {(provided) => (
@@ -280,43 +182,19 @@ const TaskKanban = ({
                       <h3>{column.title}</h3>
                     </div>
                     <div className="card-list">
-                      {sortedTasks.map((task, index) => (
-                        <TaskCard
-                          key={task.id}
-                          task={task}
-                          index={index}
-                          updateTask={updateTask}
-                          deleteTask={deleteTask}
-                          isCompletedColumn={isSuccessColumn}
-                          onDeleteComment={async (taskId, commentIndex) => {
-                            const taskToUpdate = kanbanBoard.tasks[taskId];
-                            if (taskToUpdate) {
-                              const updatedComments = [
-                                ...(taskToUpdate.comments || []),
-                              ];
-                              updatedComments.splice(commentIndex, 1);
-                              const updatedTask = {
-                                ...taskToUpdate,
-                                comments: updatedComments,
-                              };
-                              updateTask(updatedTask);
-                              const { error } = await supabase
-                                .from("tasks")
-                                .update({
-                                  comments: updatedComments,
-                                  updated_at: new Date().toISOString(),
-                                })
-                                .eq("id", taskId);
-                              if (error) {
-                                console.error(
-                                  "Error deleting comment:",
-                                  error.message
-                                );
-                              }
-                            }
-                          }}
-                        />
-                      ))}
+                      {column.cardIds.map((taskId, index) => {
+                        const task = kanbanBoard.tasks[taskId];
+                        return (
+                          task && (
+                            <TaskCard
+                              key={task.id}
+                              task={task}
+                              index={index}
+                              // Pass update and delete functions as needed.
+                            />
+                          )
+                        );
+                      })}
                       {provided.placeholder}
                     </div>
                   </div>
@@ -329,7 +207,7 @@ const TaskKanban = ({
       {showTemplateModal && (
         <TaskTemplateModal
           onApplyTemplate={async (template) => {
-            // Create a new task using the template data.
+            // Create a new task using template data.
             const newTaskId = "task-" + Date.now();
             const newTask = {
               ...template,
@@ -342,7 +220,7 @@ const TaskKanban = ({
                 ? template.tags
                 : [template.tags],
               comments: [],
-              board_id: board.id, // assign task to current board
+              board_id: board.id,
               status:
                 board && board.defaultColumn
                   ? board.defaultColumn
@@ -350,6 +228,7 @@ const TaskKanban = ({
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
             };
+            // Update local state.
             setKanbanBoard((prevBoard) => {
               const newBoard = { ...prevBoard, tasks: { ...prevBoard.tasks } };
               newBoard.tasks[newTaskId] = newTask;

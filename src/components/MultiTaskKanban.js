@@ -6,12 +6,7 @@ import EditBoardModal from "./EditBoardModal";
 import { supabase } from "../utils/supabase";
 import "../styles/MultiTaskKanban.css";
 
-const MultiTaskKanban = ({
-  filterCriteria,
-  setFilterCriteria,
-  showFilterModal,
-  setShowFilterModal,
-}) => {
+const MultiTaskKanban = ({ filterCriteria, setFilterCriteria, showFilterModal, setShowFilterModal, tasksRefresh }) => {
   const [boards, setBoards] = useState([]);
   const [selectedBoardId, setSelectedBoardId] = useState(null);
   const [showAddBoardModal, setShowAddBoardModal] = useState(false);
@@ -27,13 +22,11 @@ const MultiTaskKanban = ({
       if (error) {
         console.error("Error fetching boards:", error.message);
       } else if (data) {
-        // For each board, sort its columns by position and calculate default/success if not set.
+        // For each board, sort its columns by position and assign default/success values.
         const mappedBoards = data.map((board) => {
           const columns = board.board_columns
             ? board.board_columns.sort((a, b) => a.position - b.position)
             : [];
-          // If the board doesn't have explicit default/success columns (they aren't stored on the board row),
-          // assume the first column is default and the column with is_success=true is the success column.
           const defaultColumn = columns.length > 0 ? columns[0].id : null;
           const successColumn = columns.find((col) => col.is_success)
             ? columns.find((col) => col.is_success).id
@@ -70,25 +63,17 @@ const MultiTaskKanban = ({
         {boards.map((board) => (
           <div
             key={board.id}
-            className={`board-tab ${
-              board.id === selectedBoardId ? "active" : ""
-            }`}
+            className={`board-tab ${board.id === selectedBoardId ? "active" : ""}`}
             onClick={() => setSelectedBoardId(board.id)}
           >
             {board.name}
           </div>
         ))}
-        <div
-          className="board-tab add-board-tab"
-          onClick={() => setShowAddBoardModal(true)}
-        >
+        <div className="board-tab add-board-tab" onClick={() => setShowAddBoardModal(true)}>
           + Add Board
         </div>
         {selectedBoard && (
-          <div
-            className="board-tab edit-board-tab"
-            onClick={() => setShowEditBoardModal(true)}
-          >
+          <div className="board-tab edit-board-tab" onClick={() => setShowEditBoardModal(true)}>
             Edit Board
           </div>
         )}
@@ -99,15 +84,13 @@ const MultiTaskKanban = ({
           filterCriteria={filterCriteria}
           showFilterModal={showFilterModal}
           setShowFilterModal={setShowFilterModal}
+          tasksRefresh={tasksRefresh}
         />
       ) : (
         <p>No board selected. Please add a board.</p>
       )}
       {showAddBoardModal && (
-        <AddBoardModal
-          onClose={() => setShowAddBoardModal(false)}
-          onBoardAdded={handleBoardAdded}
-        />
+        <AddBoardModal onClose={() => setShowAddBoardModal(false)} onBoardAdded={handleBoardAdded} />
       )}
       {showEditBoardModal && selectedBoard && (
         <EditBoardModal
