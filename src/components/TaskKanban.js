@@ -19,7 +19,7 @@ const TaskKanban = ({
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
 
-  // Fetch tasks for the board and build a board object with columns and tasks.
+  // Fetch tasks and build board state.
   useEffect(() => {
     const initialColumns =
       board && board.columns
@@ -62,7 +62,6 @@ const TaskKanban = ({
         };
         data.forEach((task) => {
           newBoard.tasks[task.id] = task;
-          // Determine the column for the task:
           const columnKey =
             task.status && initialColumns[task.status]
               ? task.status
@@ -77,7 +76,49 @@ const TaskKanban = ({
     fetchTasks();
   }, [board, showTemplateModal, tasksRefresh]);
 
-  // Fully implement onDragEnd to update state and database.
+  // updateTask: update local board state with an updated task.
+  const updateTask = (updatedTask) => {
+    setKanbanBoard((prevBoard) => {
+      if (!prevBoard) return prevBoard;
+      return {
+        ...prevBoard,
+        tasks: { ...prevBoard.tasks, [updatedTask.id]: updatedTask },
+      };
+    });
+  };
+
+  // deleteTask: remove the task from local state and delete it from the DB.
+  const deleteTask = async (taskId) => {
+    // Update local state: remove task from tasks and from each column's cardIds.
+    setKanbanBoard((prevBoard) => {
+      if (!prevBoard) return prevBoard;
+      const updatedTasks = { ...prevBoard.tasks };
+      delete updatedTasks[taskId];
+      const updatedColumns = { ...prevBoard.columns };
+      Object.keys(updatedColumns).forEach((colKey) => {
+        updatedColumns[colKey].cardIds = updatedColumns[colKey].cardIds.filter(
+          (id) => id !== String(taskId)
+        );
+      });
+      return { ...prevBoard, tasks: updatedTasks, columns: updatedColumns };
+    });
+    // Convert taskId to number if necessary (since tasks.id is SERIAL).
+    const numericTaskId =
+      typeof taskId === "number" ? taskId : parseInt(taskId, 10);
+    // Delete from the DB.
+    const { error } = await supabase
+      .from("tasks")
+      .delete()
+      .eq("id", numericTaskId)
+      .select();
+    if (error) {
+      console.error("Error deleting task:", error.message);
+    } else {
+      console.log("Task deleted successfully");
+    }
+  };
+
+  // onDragEnd: update local state and then update the DB.
   const onDragEnd = (result) => {
     const { destination, source, draggableId } = result;
     if (!destination) return;
@@ -87,7 +128,6 @@ const TaskKanban = ({
     )
       return;
 
-    // Update local state
     setKanbanBoard((prevBoard) => {
       const newColumns = { ...prevBoard.columns };
       const sourceCol = { ...newColumns[source.droppableId] };
@@ -104,14 +144,12 @@ const TaskKanban = ({
       newColumns[source.droppableId] = sourceCol;
       newColumns[destination.droppableId] = destCol;
 
-      // Update the task's status locally
       const updatedTask = {
         ...prevBoard.tasks[draggableId],
         status: destination.droppableId,
       };
       const newTasks = { ...prevBoard.tasks, [draggableId]: updatedTask };
 
-      // Trigger confetti if moved to the success column
       if (
         board &&
         board.columns &&
@@ -120,11 +158,9 @@ const TaskKanban = ({
         setShowConfetti(true);
         setTimeout(() => setShowConfetti(false), 3000);
       }
-
       return { ...prevBoard, columns: newColumns, tasks: newTasks };
     });
 
-    // Update the task's status in the database
     const task = kanbanBoard.tasks[draggableId];
     if (task) {
       supabase
@@ -153,7 +189,7 @@ const TaskKanban = ({
         <div className="board-management">
           <label>
             View:
-            <select value={"all"} onChange={() => {}}>
+            <select value="all" onChange={() => {}}>
               <option value="all">All Tasks</option>
               <option value="my">My Tasks</option>
             </select>
@@ -166,7 +202,6 @@ const TaskKanban = ({
         </div>
       </div>
       <DragDropContext onDragEnd={onDragEnd}>
-        {/* This container ensures columns are displayed side-by-side */}
         <div className="kanban-board">
           {Object.keys(kanbanBoard.columns).map((colKey) => {
             const column = kanbanBoard.columns[colKey];
@@ -190,7 +225,9 @@ const TaskKanban = ({
                               key={task.id}
                               task={task}
                               index={index}
-                              // Pass update and delete functions as needed.
+                              updateTask={updateTask}
+                              deleteTask={deleteTask}
+                              isCompletedColumn={false} // Adjust as needed
                             />
                           )
                         );
@@ -207,7 +244,6 @@ const TaskKanban = ({
       {showTemplateModal && (
         <TaskTemplateModal
           onApplyTemplate={async (template) => {
-            // Create a new task using template data.
             const newTaskId = "task-" + Date.now();
             const newTask = {
               ...template,
@@ -228,7 +264,6 @@ const TaskKanban = ({
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
             };
-            // Update local state.
             setKanbanBoard((prevBoard) => {
               const newBoard = { ...prevBoard, tasks: { ...prevBoard.tasks } };
               newBoard.tasks[newTaskId] = newTask;

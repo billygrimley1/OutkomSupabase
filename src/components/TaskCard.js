@@ -16,27 +16,22 @@ const getPriorityColor = (priority, topPriority, isCompletedColumn) => {
 
 // Helper function that ensures the value is returned as an array.
 const normalizeArray = (value) => {
-  if (Array.isArray(value)) {
-    return value;
-  } else if (value !== null && value !== undefined) {
-    return [value];
-  } else {
-    return [];
-  }
+  if (Array.isArray(value)) return value;
+  if (value !== null && value !== undefined) return [value];
+  return [];
 };
 
 const TaskCard = ({
   task,
   index,
-  updateTask,
-  deleteTask,
+  updateTask = () => {},
+  deleteTask = () => {},
   isCompletedColumn,
-  onDeleteComment, // New prop for deleting a comment
+  onDeleteComment,
 }) => {
   // Normalize assigned_to and tags fields.
   const assignedToArray = normalizeArray(task.assigned_to);
   const tagsArray = normalizeArray(task.tags);
-
   const initialAssignedTo = assignedToArray.join(", ");
   const initialTags = tagsArray.join(", ");
 
@@ -77,7 +72,6 @@ const TaskCard = ({
     );
     const updatedTask = { ...task, subtasks: updatedSubtasks };
     updateTask(updatedTask);
-    // Also update the database.
     supabase
       .from("tasks")
       .update({
@@ -94,23 +88,56 @@ const TaskCard = ({
     setEditedTask({ ...editedTask, [field]: value });
   };
 
+  // Updated saveEdits function with proper type conversions.
   const saveEdits = async () => {
     const updatedTask = {
       ...task,
       title: editedTask.title,
-      due_date: editedTask.dueDate,
+      due_date: editedTask.dueDate, // should be in YYYY-MM-DD format
       priority: editedTask.priority,
+      // Convert assignedTo string to an array of numbers
       assigned_to: editedTask.assignedTo
         .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean),
-      related_customer: editedTask.relatedCustomer,
+        .map((s) => parseInt(s.trim(), 10))
+        .filter((n) => !isNaN(n)),
+      // Convert relatedCustomer to a number (or null)
+      related_customer: editedTask.relatedCustomer
+        ? parseInt(editedTask.relatedCustomer.trim(), 10)
+        : null,
+      // Tags as array of strings
       tags: editedTask.tags
         .split(",")
         .map((s) => s.trim())
         .filter(Boolean),
     };
+
+    // Update local state.
     updateTask(updatedTask);
+
+    // Convert task.id to a number if necessary.
+    const taskId =
+      typeof task.id === "number" ? task.id : parseInt(task.id, 10);
+
+    // Persist changes to Supabase.
+    const { data, error } = await supabase
+      .from("tasks")
+      .update({
+        title: updatedTask.title,
+        due_date: updatedTask.due_date,
+        priority: updatedTask.priority,
+        assigned_to: updatedTask.assigned_to,
+        related_customer: updatedTask.related_customer,
+        tags: updatedTask.tags,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", taskId)
+      .select();
+
+    if (error) {
+      console.error("Error updating task:", error);
+    } else {
+      console.log("Task updated successfully:", data);
+    }
     setEditMode(false);
   };
 
