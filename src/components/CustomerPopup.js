@@ -1,3 +1,4 @@
+// src/components/CustomerPopup.js
 import React from "react";
 import "../styles/CustomerPopup.css";
 
@@ -15,10 +16,12 @@ const CustomerPopup = ({ customer, onClose }) => {
           <strong>Risk:</strong> {customer.risk_status}
         </p>
         <p>
-          <strong>Health:</strong> {customer.healthRank || customer.health_rank || ""}
+          <strong>Health:</strong>{" "}
+          {customer.healthRank || customer.health_rank || ""}
         </p>
         <p>
-          <strong>Renewal:</strong> {customer.renewalDate || customer.renewal_date || ""}
+          <strong>Renewal:</strong>{" "}
+          {customer.renewalDate || customer.renewal_date || ""}
         </p>
         <p>
           <strong>CSM:</strong> {customer.CSM || customer.csm || ""}

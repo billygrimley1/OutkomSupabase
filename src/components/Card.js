@@ -1,3 +1,4 @@
+// src/components/Card.js
 import React, { useState } from "react";
 import { Draggable } from "react-beautiful-dnd";
 import "../styles/Card.css";

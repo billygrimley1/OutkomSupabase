@@ -23,11 +23,31 @@ const CustomerForm = () => {
   // Load custom fields from localStorage (if any).
   const [customFields, setCustomFields] = useState([]);
 
+  // New state for available workflow boards and selected board IDs.
+  const [workflowBoards, setWorkflowBoards] = useState([]);
+  const [selectedBoards, setSelectedBoards] = useState([]);
+
   useEffect(() => {
     const stored = localStorage.getItem("customFields");
     if (stored) {
       setCustomFields(JSON.parse(stored));
     }
+  }, []);
+
+  // Fetch workflow boards from Supabase
+  useEffect(() => {
+    async function fetchBoards() {
+      const { data, error } = await supabase
+        .from("boards")
+        .select("*")
+        .eq("board_type", "workflow");
+      if (error) {
+        console.error("Error fetching boards:", error.message);
+      } else {
+        setWorkflowBoards(data);
+      }
+    }
+    fetchBoards();
   }, []);
 
   const handleChange = (e) => {
@@ -36,6 +56,14 @@ const CustomerForm = () => {
 
   const handleCustomChange = (e, fieldName) => {
     setFormData({ ...formData, [fieldName]: e.target.value });
+  };
+
+  const handleBoardCheckbox = (boardId) => {
+    setSelectedBoards((prev) =>
+      prev.includes(boardId)
+        ? prev.filter((id) => id !== boardId)
+        : [...prev, boardId]
+    );
   };
 
   const handleSubmit = async (e) => {
@@ -59,7 +87,12 @@ const CustomerForm = () => {
       status: formData.status,
       csm: formData.CSM,
       risk_status: formData.riskStatus,
-      custom_data: {},
+      custom_data: {
+        // Store the selected board IDs for workflow Kanbans.
+        workflow_boards: selectedBoards,
+        // Initialize per-board positions (kanbanPositions) as empty.
+        kanbanPositions: {},
+      },
     };
 
     customFields.forEach((field) => {
@@ -90,6 +123,7 @@ const CustomerForm = () => {
         CSM: "",
         riskStatus: "",
       });
+      setSelectedBoards([]);
     }
   };
 
@@ -240,6 +274,19 @@ const CustomerForm = () => {
             )}
           </label>
         ))}
+        <fieldset>
+          <legend>Assign to Kanbans</legend>
+          {workflowBoards.map((board) => (
+            <label key={board.id}>
+              <input
+                type="checkbox"
+                checked={selectedBoards.includes(board.id)}
+                onChange={() => handleBoardCheckbox(board.id)}
+              />
+              {board.name}
+            </label>
+          ))}
+        </fieldset>
         <button type="submit">Add Customer</button>
       </form>
     </div>

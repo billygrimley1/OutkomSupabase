@@ -30,7 +30,8 @@
   color: #333;
 }
 
-.config-form input {
+.config-form input,
+.config-form select {
   margin-top: 6px;
   padding: 8px 10px;
   font-size: 0.95em;
@@ -40,7 +41,8 @@
   transition: border 0.2s ease, box-shadow 0.2s ease;
 }
 
-.config-form input:focus {
+.config-form input:focus,
+.config-form select:focus {
   border-color: #ffd700;
   box-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
   outline: none;

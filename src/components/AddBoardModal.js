@@ -42,9 +42,10 @@ const AddBoardModal = ({ onClose, onBoardAdded }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     // Create board object to insert into the "boards" table.
+    // Note: Set board_type to "workflow" for workflow Kanban boards.
     const newBoard = {
       name: boardName,
-      board_type: "task", // or "workflow" if applicable
+      board_type: "workflow",
     };
 
     // Insert the new board.

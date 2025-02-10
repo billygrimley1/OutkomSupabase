@@ -3,7 +3,13 @@ import React from "react";
 import { FaPlus, FaFilter, FaClone, FaSlidersH } from "react-icons/fa";
 import "../styles/TopBar.css";
 
-const TopBar = ({ setView, currentView, onAddTask, onOpenFilterModal }) => {
+const TopBar = ({
+  setView,
+  currentView,
+  onAddTask,
+  onOpenFilterModal,
+  onAddBoard,
+}) => {
   const handleAdd = () => {
     if (currentView === "workflows") {
       alert("Add new customer record (prototype)");
@@ -45,6 +51,9 @@ const TopBar = ({ setView, currentView, onAddTask, onOpenFilterModal }) => {
             </button>
             <button onClick={handleConfigureBoard}>
               <FaSlidersH /> Configure Board
+            </button>
+            <button onClick={onAddBoard}>
+              <FaPlus /> Add Kanban
             </button>
           </>
         )}
