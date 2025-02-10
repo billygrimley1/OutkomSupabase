@@ -5,42 +5,79 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.6);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 1100;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .modal {
-  background: #fff;
-  padding: 20px;
-  border-radius: 8px;
-  width: 400px;
-  max-width: 90%;
+  background: #ffffff;
+  padding: 30px;
+  border-radius: 12px;
+  width: 420px;
+  max-width: 95%;
+  /* Set maximum height and allow vertical scrolling */
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+  animation: slideUp 0.3s ease;
 }
 
-/* Optional: Style for a modal header (useful for Filter Modal) */
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.modal h2,
 .modal h3 {
-  margin-top: 0;
-  margin-bottom: 20px;
+  margin: 0 0 20px 0;
+  font-size: 1.5rem;
+  color: #333;
 }
 
 .modal form label {
   display: block;
-  margin-bottom: 10px;
-  font-weight: bold;
+  margin-bottom: 12px;
+  font-weight: 600;
+  color: #444;
 }
 
 .modal form input,
 .modal form select,
 .modal form textarea {
   width: 100%;
-  padding: 6px;
-  margin-top: 4px;
-  box-sizing: border-box;
+  padding: 10px 12px;
+  margin-top: 6px;
+  margin-bottom: 12px;
   border: 1px solid #ccc;
-  border-radius: 4px;
+  border-radius: 6px;
+  font-size: 1rem;
+  transition: border 0.2s ease;
+}
+
+.modal form input:focus,
+.modal form select:focus,
+.modal form textarea:focus {
+  border-color: #007bff;
+  outline: none;
 }
 
 .subtasks-section {
@@ -50,7 +87,7 @@
 .new-subtask {
   display: flex;
   gap: 10px;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 
 .new-subtask input {
@@ -60,14 +97,16 @@
 .subtasks-list {
   list-style: none;
   padding-left: 0;
+  margin: 0;
 }
 
 .subtasks-list li {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 4px 0;
+  padding: 6px 0;
   border-bottom: 1px solid #eee;
+  font-size: 0.95rem;
 }
 
 .modal-buttons {
@@ -76,22 +115,27 @@
 }
 
 .modal-buttons button {
-  margin-left: 10px;
+  margin-left: 12px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  background: #007bff;
+  color: #fff;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.3s ease;
 }
 
-/* Additional styles for Filter Modal checkbox groups */
-.checkbox-group {
-  display: flex;
-  gap: 10px;
-  margin-top: 4px;
+.modal-buttons button:hover {
+  background: #0056b3;
 }
 
-.checkbox-group label {
-  display: flex;
-  align-items: center;
-  font-weight: normal;
+/* Secondary button (e.g. Cancel) */
+.modal-buttons button:nth-child(2) {
+  background: #ccc;
+  color: #333;
 }
 
-.checkbox-group input[type="checkbox"] {
-  margin-right: 4px;
+.modal-buttons button:nth-child(2):hover {
+  background: #b3b3b3;
 }

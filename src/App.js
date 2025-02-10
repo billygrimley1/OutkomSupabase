@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import LeftNav from "./components/LeftNav";
 import TopBar from "./components/TopBar";
 import WorkflowKanban from "./components/WorkflowKanban";
-import TaskKanban from "./components/TaskKanban";
+import MultiTaskKanban from "./components/MultiTaskKanban";
 import CustomerForm from "./components/CustomerForm";
 import UserForm from "./components/UserForm";
 import CustomFieldsManager from "./components/CustomFieldsManager";
@@ -16,7 +16,6 @@ import "./styles/App.css";
 function App() {
   const [view, setView] = useState("workflows");
   const [showAddTaskModal, setShowAddTaskModal] = useState(false);
-  // Lift filter state up here
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [filterCriteria, setFilterCriteria] = useState({
     tags: [],
@@ -25,6 +24,8 @@ function App() {
     dueDateStart: "",
     dueDateEnd: "",
   });
+  // State variable to trigger refresh of tasks.
+  const [tasksRefresh, setTasksRefresh] = useState(0);
 
   const renderView = () => {
     switch (view) {
@@ -32,11 +33,12 @@ function App() {
         return <WorkflowKanban />;
       case "actions":
         return (
-          <TaskKanban
+          <MultiTaskKanban
             filterCriteria={filterCriteria}
             setFilterCriteria={setFilterCriteria}
             showFilterModal={showFilterModal}
             setShowFilterModal={setShowFilterModal}
+            tasksRefresh={tasksRefresh}
           />
         );
       case "customers":
@@ -73,6 +75,8 @@ function App() {
           onClose={() => setShowAddTaskModal(false)}
           onTaskAdded={(newTask) => {
             setShowAddTaskModal(false);
+            // Trigger a refresh so that new tasks are fetched
+            setTasksRefresh((prev) => prev + 1);
           }}
         />
       )}
