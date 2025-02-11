@@ -1,4 +1,4 @@
-/* src/styles/AddBoardModal.css */
+/* AddBoardModal.css */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -22,14 +22,19 @@
   }
 }
 
+/* Updated modal container */
 .modal {
-  background: #fff;
-  padding: 30px;
-  border-radius: 12px;
-  width: 400px;
-  max-width: 95%;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+  background: #ffffff;
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  width: 90vw; /* Use 90% of the viewport width */
+  max-width: 500px; /* Allow a larger maximum width */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   animation: slideUp 0.3s ease;
+  margin: 0 auto;
+  overflow-x: hidden; /* Prevent horizontal scrolling */
+  overflow-y: auto; /* Allow vertical scrolling if needed */
 }
 
 @keyframes slideUp {
@@ -44,34 +49,37 @@
 }
 
 .modal h3 {
-  margin: 0 0 20px 0;
+  margin: 0 0 20px;
   font-size: 1.4rem;
   color: #333;
+  text-align: center;
 }
 
 .modal form label {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  font-size: 0.9rem;
+  color: #333;
   margin-bottom: 12px;
-  font-weight: 600;
-  color: #444;
 }
 
 .modal form input {
-  width: 100%;
-  padding: 10px 12px;
+  padding: 8px 10px;
   margin-top: 6px;
-  margin-bottom: 12px;
   border: 1px solid #ccc;
-  border-radius: 6px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #ffffff, #f9f9f9);
   font-size: 1rem;
-  transition: border 0.2s ease;
+  transition: border 0.2s ease, box-shadow 0.2s ease;
 }
 
 .modal form input:focus {
-  border-color: #007bff;
+  border-color: #ffd700;
+  box-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
   outline: none;
 }
 
+/* Columns Section */
 .columns-section {
   margin-top: 20px;
 }
@@ -87,19 +95,21 @@
   flex: 1;
   padding: 8px 10px;
   border: 1px solid #ccc;
-  border-radius: 4px;
-  transition: border 0.2s ease;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #ffffff, #f9f9f9);
+  transition: border 0.2s ease, box-shadow 0.2s ease;
 }
 
 .column-item input:focus {
-  border-color: #007bff;
+  border-color: #ffd700;
+  box-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
   outline: none;
 }
 
 .column-item button {
   padding: 6px 10px;
   border: none;
-  border-radius: 4px;
+  border-radius: 8px;
   background: #f0f0f0;
   cursor: pointer;
   transition: background 0.2s ease;
@@ -122,6 +132,7 @@
   gap: 4px;
 }
 
+/* Buttons */
 .modal-buttons {
   margin-top: 20px;
   text-align: right;
@@ -131,23 +142,23 @@
   margin-left: 12px;
   padding: 10px 20px;
   border: none;
-  border-radius: 6px;
-  background: #007bff;
-  color: #fff;
+  border-radius: 8px;
+  background: #ffd700;
+  color: #333;
   font-size: 1rem;
   cursor: pointer;
   transition: background 0.3s ease;
 }
 
 .modal-buttons button:hover {
-  background: #0056b3;
+  background: #e6c200;
 }
 
-.modal-buttons button:nth-child(2) {
+.modal-buttons button.secondary {
   background: #ccc;
   color: #333;
 }
 
-.modal-buttons button:nth-child(2):hover {
+.modal-buttons button.secondary:hover {
   background: #b3b3b3;
 }

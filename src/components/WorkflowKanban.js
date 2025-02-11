@@ -3,8 +3,9 @@ import React, { useState, useEffect } from "react";
 import { DragDropContext, Droppable } from "react-beautiful-dnd";
 import Card from "./Card";
 import CustomerPopup from "./CustomerPopup";
-import TopBar from "./TopBar";
-// Removed BoardConfigPanel import since board configuration is no longer used.
+// Removed TopBar import as it's causing the duplicate display
+// import TopBar from "./TopBar";
+import BoardConfigPanel from "./BoardConfigPanel"; // If still needed for board configuration
 import "../styles/Kanban.css";
 import "../styles/WorkflowKanban.css";
 import { supabase } from "../utils/supabase";
@@ -17,7 +18,8 @@ const WorkflowKanban = ({ setView }) => {
   const [customers, setCustomers] = useState({});
   const [showConfetti, setShowConfetti] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
-  // Removed view state as board config is no longer used.
+  // view is either "kanban" or "boardConfig"
+  const [view, setLocalView] = useState("kanban");
   const [showAddBoardModal, setShowAddBoardModal] = useState(false);
 
   // Fetch workflow boards from Supabase.
@@ -168,15 +170,12 @@ const WorkflowKanban = ({ setView }) => {
     }
   };
 
-  return (
+  return view === "boardConfig" ? (
+    <BoardConfigPanel onBack={() => setView("kanban")} />
+  ) : (
     <div className="kanban-container">
       {showConfetti && <ReactConfetti numberOfPieces={200} />}
-      <TopBar
-        setView={setView}
-        // Removed onAddBoard prop to eliminate board configuration UI and branding.
-        onAddTask={() => {}}
-        onOpenFilterModal={() => {}}
-      />
+      {/* Removed duplicate TopBar from here */}
       <div className="workflow-kanban">
         {!activeBoard ? (
           <div className="no-board-message">
@@ -199,7 +198,6 @@ const WorkflowKanban = ({ setView }) => {
                   {board.name}
                 </div>
               ))}
-              {/* The "Add Kanban" button has been removed */}
             </div>
             <DragDropContext onDragEnd={onDragEnd}>
               <div className="kanban-board">

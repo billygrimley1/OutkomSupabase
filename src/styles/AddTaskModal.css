@@ -1,4 +1,4 @@
-/* src/styles/AddTaskModal.css */
+/* AddTaskModal.css */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -24,14 +24,14 @@
 
 .modal {
   background: #ffffff;
-  padding: 30px;
-  border-radius: 12px;
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
   width: 420px;
   max-width: 95%;
-  /* Set maximum height and allow vertical scrolling */
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   animation: slideUp 0.3s ease;
 }
 
@@ -48,38 +48,41 @@
 
 .modal h2,
 .modal h3 {
-  margin: 0 0 20px 0;
+  margin: 0 0 20px;
   font-size: 1.5rem;
   color: #333;
+  text-align: center;
 }
 
 .modal form label {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  font-size: 0.9rem;
+  color: #333;
   margin-bottom: 12px;
-  font-weight: 600;
-  color: #444;
 }
 
 .modal form input,
 .modal form select,
 .modal form textarea {
-  width: 100%;
-  padding: 10px 12px;
+  padding: 8px 10px;
   margin-top: 6px;
-  margin-bottom: 12px;
   border: 1px solid #ccc;
-  border-radius: 6px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #ffffff, #f9f9f9);
   font-size: 1rem;
-  transition: border 0.2s ease;
+  transition: border 0.2s ease, box-shadow 0.2s ease;
 }
 
 .modal form input:focus,
 .modal form select:focus,
 .modal form textarea:focus {
-  border-color: #007bff;
+  border-color: #ffd700;
+  box-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
   outline: none;
 }
 
+/* Subtasks */
 .subtasks-section {
   margin-top: 20px;
 }
@@ -92,11 +95,22 @@
 
 .new-subtask input {
   flex: 1;
+  padding: 8px 10px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #ffffff, #f9f9f9);
+  transition: border 0.2s ease, box-shadow 0.2s ease;
+}
+
+.new-subtask input:focus {
+  border-color: #ffd700;
+  box-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
+  outline: none;
 }
 
 .subtasks-list {
   list-style: none;
-  padding-left: 0;
+  padding: 0;
   margin: 0;
 }
 
@@ -109,6 +123,7 @@
   font-size: 0.95rem;
 }
 
+/* Buttons */
 .modal-buttons {
   margin-top: 20px;
   text-align: right;
@@ -118,24 +133,23 @@
   margin-left: 12px;
   padding: 10px 20px;
   border: none;
-  border-radius: 6px;
-  background: #007bff;
-  color: #fff;
+  border-radius: 8px;
+  background: #ffd700;
+  color: #333;
   font-size: 1rem;
   cursor: pointer;
   transition: background 0.3s ease;
 }
 
 .modal-buttons button:hover {
-  background: #0056b3;
+  background: #e6c200;
 }
 
-/* Secondary button (e.g. Cancel) */
-.modal-buttons button:nth-child(2) {
+.modal-buttons button.secondary {
   background: #ccc;
   color: #333;
 }
 
-.modal-buttons button:nth-child(2):hover {
+.modal-buttons button.secondary:hover {
   background: #b3b3b3;
 }
