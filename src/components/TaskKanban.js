@@ -185,22 +185,6 @@ const TaskKanban = ({
   return (
     <div className="kanban-container">
       {showConfetti && <ReactConfetti numberOfPieces={200} />}
-      <div className="board-controls">
-        <div className="board-management">
-          <label>
-            View:
-            <select value="all" onChange={() => {}}>
-              <option value="all">All Tasks</option>
-              <option value="my">My Tasks</option>
-            </select>
-          </label>
-        </div>
-        <div className="board-buttons">
-          <button onClick={() => setShowTemplateModal(true)}>
-            Add Task from Template
-          </button>
-        </div>
-      </div>
       <DragDropContext onDragEnd={onDragEnd}>
         <div className="kanban-board">
           {Object.keys(kanbanBoard.columns).map((colKey) => {
