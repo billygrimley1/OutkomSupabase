@@ -4,21 +4,20 @@ import { DragDropContext, Droppable } from "react-beautiful-dnd";
 import Card from "./Card";
 import CustomerPopup from "./CustomerPopup";
 import TopBar from "./TopBar";
-import BoardConfigPanel from "./BoardConfigPanel"; // Our new configuration panel
-import "../styles/Kanban.css"; // Global Kanban styles
-import "../styles/WorkflowKanban.css"; // Workflow-specific styles
+// Removed BoardConfigPanel import since board configuration is no longer used.
+import "../styles/Kanban.css";
+import "../styles/WorkflowKanban.css";
 import { supabase } from "../utils/supabase";
 import ReactConfetti from "react-confetti";
 
-const WorkflowKanban = () => {
+const WorkflowKanban = ({ setView }) => {
   const [boards, setBoards] = useState([]);
   const [activeBoard, setActiveBoard] = useState(null);
   const [columns, setColumns] = useState([]);
   const [customers, setCustomers] = useState({});
   const [showConfetti, setShowConfetti] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
-  // view is either "kanban" or "boardConfig"
-  const [view, setView] = useState("kanban");
+  // Removed view state as board config is no longer used.
   const [showAddBoardModal, setShowAddBoardModal] = useState(false);
 
   // Fetch workflow boards from Supabase.
@@ -31,7 +30,6 @@ const WorkflowKanban = () => {
       if (error) {
         console.error("Error fetching boards:", error.message);
       } else {
-        // Do not auto-create a board; if none exist, activeBoard remains null.
         setBoards(data);
         if (data.length > 0) {
           setActiveBoard(data[0]);
@@ -82,13 +80,11 @@ const WorkflowKanban = () => {
   }, []);
 
   // Filter customers that belong to the active board.
-  // Convert values to numbers so that comparison works even if stored as strings.
   const getBoardCustomers = () => {
     if (!activeBoard) return [];
     return Object.values(customers).filter((cust) => {
       const workflowBoards = cust.custom_data?.workflow_boards;
       if (Array.isArray(workflowBoards)) {
-        // Convert each board id to a number before comparing.
         const boardIds = workflowBoards.map((val) => Number(val));
         return boardIds.includes(Number(activeBoard.id));
       }
@@ -100,13 +96,11 @@ const WorkflowKanban = () => {
   const getColumnsWithCards = () => {
     const boardCustomers = getBoardCustomers();
     const colMap = {};
-    // Create an empty array for each column using numeric id keys.
     columns.forEach((col) => {
       colMap[Number(col.id)] = [];
     });
     boardCustomers.forEach((cust) => {
       const positions = cust.custom_data?.kanbanPositions || {};
-      // Try to get the column id using the active board id (converted to string or number)
       let colId =
         positions[activeBoard.id] || positions[String(activeBoard.id)];
       if (!colId && columns.length > 0) {
@@ -134,7 +128,6 @@ const WorkflowKanban = () => {
     }
 
     const colMap = getColumnsWithCards();
-    // Convert droppableId strings to numbers for proper comparison.
     const sourceColId = Number(source.droppableId);
     const destColId = Number(destination.droppableId);
 
@@ -147,7 +140,6 @@ const WorkflowKanban = () => {
     destCards.splice(destination.index, 0, movedCustomer);
     colMap[destColId] = destCards;
 
-    // Update customer's kanbanPositions for the active board.
     const updatedCustomer = { ...movedCustomer };
     if (!updatedCustomer.custom_data) updatedCustomer.custom_data = {};
     if (!updatedCustomer.custom_data.kanbanPositions)
@@ -169,7 +161,6 @@ const WorkflowKanban = () => {
         }
       });
 
-    // Convert column id to number and check if the destination column is flagged as success.
     const destColumn = columns.find((col) => Number(col.id) === destColId);
     if (destColumn && destColumn.is_success) {
       setShowConfetti(true);
@@ -177,29 +168,23 @@ const WorkflowKanban = () => {
     }
   };
 
-  return view === "boardConfig" ? (
-    // Render the configuration panel; pass an onBack callback to return to Kanban view.
-    <BoardConfigPanel onBack={() => setView("kanban")} />
-  ) : (
+  return (
     <div className="kanban-container">
       {showConfetti && <ReactConfetti numberOfPieces={200} />}
       <TopBar
         setView={setView}
-        currentView={view}
+        // Removed onAddBoard prop to eliminate board configuration UI and branding.
         onAddTask={() => {}}
         onOpenFilterModal={() => {}}
-        onAddBoard={() => setShowAddBoardModal(true)}
       />
       <div className="workflow-kanban">
-        {/* If no board exists, display a message prompting the user to add one */}
         {!activeBoard ? (
           <div className="no-board-message">
             <p>No Kanban Board Found.</p>
-            <p>Please add a board using the "+ Add Kanban" button.</p>
+            <p>Please add a board in the settings.</p>
           </div>
         ) : (
           <>
-            {/* Board Tabs */}
             <div className="board-tabs">
               {boards.map((board) => (
                 <div
@@ -212,15 +197,9 @@ const WorkflowKanban = () => {
                   onClick={() => setActiveBoard(board)}
                 >
                   {board.name}
-                  {/* Optionally, add board removal button here */}
                 </div>
               ))}
-              <button
-                className="add-board-tab"
-                onClick={() => setShowAddBoardModal(true)}
-              >
-                + Add Kanban
-              </button>
+              {/* The "Add Kanban" button has been removed */}
             </div>
             <DragDropContext onDragEnd={onDragEnd}>
               <div className="kanban-board">
@@ -264,7 +243,6 @@ const WorkflowKanban = () => {
           onClose={() => setSelectedCustomer(null)}
         />
       )}
-      {/* Optionally, include your AddBoardModal component here */}
     </div>
   );
 };
