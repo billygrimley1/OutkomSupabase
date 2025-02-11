@@ -7,6 +7,7 @@ import {
   FaChartBar,
   FaCogs,
   FaSlidersH,
+  FaTable,
 } from "react-icons/fa";
 import "../styles/LeftNav.css";
 
@@ -49,6 +50,12 @@ const LeftNav = ({ setView, currentView }) => {
           onClick={() => setView("customFields")}
         >
           <FaCogs /> Custom Fields
+        </li>
+        <li
+          className={currentView === "records" ? "active" : ""}
+          onClick={() => setView("records")}
+        >
+          <FaTable /> Records
         </li>
         <li
           className={currentView === "boardConfig" ? "active" : ""}

@@ -9,6 +9,7 @@ import UserForm from "./components/UserForm";
 import CustomFieldsManager from "./components/CustomFieldsManager";
 import ReportsDashboard from "./components/ReportsDashboard";
 import BoardConfigPanel from "./components/BoardConfigPanel";
+import Records from "./components/Records"; // New Records screen
 import Todos from "./components/Todos";
 import AddTaskModal from "./components/AddTaskModal";
 import "./styles/App.css";
@@ -53,6 +54,8 @@ function App() {
         return <ReportsDashboard />;
       case "todos":
         return <Todos />;
+      case "records":
+        return <Records />;
       default:
         return <WorkflowKanban />;
     }

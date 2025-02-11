@@ -1,0 +1,151 @@
+/* Records.css */
+.records-container {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 20px auto;
+  background: #ffffff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.1);
+  overflow-x: auto;
+}
+
+.records-container h2 {
+  text-align: center;
+  font-size: 1.8em;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+/* Toggle Filter Button */
+.toggle-filter-btn {
+  display: block;
+  margin: 0 auto 15px auto;
+  padding: 10px 20px;
+  background: #ffd700;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1em;
+  transition: background 0.2s ease;
+}
+
+.toggle-filter-btn:hover {
+  background: #e6c200;
+}
+
+/* Filter Dropdown Panel */
+.filter-dropdown {
+  padding: 15px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #f9f9f9;
+  margin-bottom: 20px;
+}
+
+.filter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+}
+
+.filter-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.filter-field label {
+  font-size: 0.9em;
+  color: #333;
+  margin-bottom: 5px;
+}
+
+.filter-field input {
+  padding: 8px 10px;
+  font-size: 0.95em;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #ffffff, #f9f9f9);
+  transition: border 0.2s ease, box-shadow 0.2s ease;
+  box-sizing: border-box;
+}
+
+.filter-field input:focus {
+  border-color: #ffd700;
+  box-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
+  outline: none;
+}
+
+/* Table container */
+.records-table-container {
+  overflow-x: auto;
+}
+
+.records-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+  table-layout: auto;
+}
+
+.records-table th,
+.records-table td {
+  padding: 10px;
+  border: 1px solid #ddd;
+  text-align: left;
+  font-size: 0.9em;
+  vertical-align: middle;
+}
+
+.records-table th {
+  background: #f7f7f7;
+  cursor: pointer;
+  user-select: none;
+}
+
+.records-table tr:nth-child(even) {
+  background: #fefefe;
+}
+
+.records-table input[type="text"],
+.records-table input[type="number"],
+.records-table input[type="date"],
+.records-table input[type="email"] {
+  width: 100%;
+  padding: 5px;
+  font-size: 0.9em;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 5px;
+}
+
+.action-buttons button,
+.records-table button {
+  padding: 5px 10px;
+  background: #ffd700;
+  color: #333;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9em;
+  transition: background 0.2s ease;
+}
+
+.action-buttons button:hover,
+.records-table button:hover {
+  background: #e6c200;
+}
+
+.board-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-right: 5px;
+  font-size: 0.85em;
+  color: #333;
+}

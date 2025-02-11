@@ -223,25 +223,19 @@ const BoardConfigPanel = ({ onBack }) => {
             ))}
           </select>
         </label>
-        <button onClick={handleAddBoard}>Add Board</button>
-        {selectedBoard && (
-          <button onClick={() => handleRemoveBoard(selectedBoard.id)}>
-            Remove Board
-          </button>
-        )}
+        <div className="board-buttons">
+          <button onClick={handleAddBoard}>Add Board</button>
+          {selectedBoard && (
+            <button onClick={() => handleRemoveBoard(selectedBoard.id)}>
+              Remove Board
+            </button>
+          )}
+        </div>
       </div>
       {selectedBoard && (
         <div className="config-form">
           {columns.map((col, index) => (
-            <div
-              key={col.id || index}
-              style={{
-                border: "1px solid #ccc",
-                padding: "10px",
-                borderRadius: "8px",
-                marginBottom: "10px",
-              }}
-            >
+            <div key={col.id || index} className="config-column">
               <label>
                 Column Name:
                 <input
@@ -252,57 +246,49 @@ const BoardConfigPanel = ({ onBack }) => {
                   }
                 />
               </label>
-              <label>
-                <input
-                  type="radio"
-                  name="successColumn"
-                  checked={col.is_success}
-                  onChange={() => handleToggleSuccess(index)}
-                />
-                Success Column
-              </label>
-              <label>
-                <input
-                  type="radio"
-                  name="failureColumn"
-                  checked={col.is_failure}
-                  onChange={() => handleToggleFailure(index)}
-                />
-                Failure Column
-              </label>
-              <div>
-                {index > 0 && (
-                  <button onClick={() => handleReorder(index, index - 1)}>
-                    Move Up
-                  </button>
-                )}
-                {index < columns.length - 1 && (
-                  <button onClick={() => handleReorder(index, index + 1)}>
-                    Move Down
-                  </button>
-                )}
+              <div className="radio-group">
+                <label>
+                  <input
+                    type="radio"
+                    name={`success-${selectedBoard.id}`}
+                    checked={col.is_success}
+                    onChange={() => handleToggleSuccess(index)}
+                  />
+                  Success
+                </label>
+                <label>
+                  <input
+                    type="radio"
+                    name={`failure-${selectedBoard.id}`}
+                    checked={col.is_failure}
+                    onChange={() => handleToggleFailure(index)}
+                  />
+                  Failure
+                </label>
               </div>
-              <button onClick={() => handleRemoveColumn(index)}>
+              <div className="reorder-group">
+                <button onClick={() => handleReorder(index, index - 1)}>
+                  ↑
+                </button>
+                <button onClick={() => handleReorder(index, index + 1)}>
+                  ↓
+                </button>
+              </div>
+              <button
+                className="remove-column-btn"
+                onClick={() => handleRemoveColumn(index)}
+              >
                 Remove Column
               </button>
             </div>
           ))}
-          <button onClick={handleAddColumn}>Add Column</button>
-          <button onClick={handleSave}>Save Configuration</button>
+          <div className="config-form-buttons">
+            <button onClick={handleAddColumn}>Add Column</button>
+            <button onClick={handleSave}>Save Configuration</button>
+          </div>
         </div>
       )}
-      <button
-        onClick={onBack}
-        style={{
-          marginTop: "20px",
-          padding: "10px",
-          background: "#ccc",
-          border: "none",
-          borderRadius: "8px",
-          cursor: "pointer",
-          width: "100%",
-        }}
-      >
+      <button className="back-button" onClick={onBack}>
         Back to Kanban
       </button>
     </div>
