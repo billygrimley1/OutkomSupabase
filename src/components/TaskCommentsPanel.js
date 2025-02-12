@@ -1,13 +1,12 @@
-// src/components/TaskCommentsPanel.js
 import React, { useState } from "react";
 import "../styles/TaskCommentsPanel.css";
 
 const TaskCommentsPanel = ({
   task,
   onClose,
-  onAddComment,
-  onEditComment,
-  onDeleteComment,
+  onAddComment = () => {},
+  onEditComment = () => {},
+  onDeleteComment = () => {},
 }) => {
   const [commentInput, setCommentInput] = useState("");
   const [editingIndex, setEditingIndex] = useState(null);
@@ -34,8 +33,9 @@ const TaskCommentsPanel = ({
   };
 
   const handleDeleteComment = async (index) => {
-    // Optionally, you can add a confirmation step here before deleting.
-    await onDeleteComment(index);
+    if (window.confirm("Are you sure you want to delete this comment?")) {
+      await onDeleteComment(index);
+    }
   };
 
   return (
@@ -44,12 +44,12 @@ const TaskCommentsPanel = ({
         <div className="task-comments-header">
           <h3>Comments for {task.title}</h3>
           <button className="close-comments-button" onClick={onClose}>
-            Close
+            &times;
           </button>
         </div>
         <div className="task-comments-body">
           {task.comments && task.comments.length > 0 ? (
-            task.comments.map((cmt, idx) => (
+            task.comments.map((comment, idx) => (
               <div key={idx} className="task-comment-item">
                 {editingIndex === idx ? (
                   <>
@@ -57,24 +57,43 @@ const TaskCommentsPanel = ({
                       type="text"
                       value={editingText}
                       onChange={(e) => setEditingText(e.target.value)}
+                      className="comment-input"
                     />
-                    <button onClick={() => handleSaveEdit(idx)}>Save</button>
-                    <button onClick={handleCancelEdit}>Cancel</button>
+                    <div className="comment-actions">
+                      <button
+                        onClick={() => handleSaveEdit(idx)}
+                        className="save-comment-button"
+                      >
+                        Save
+                      </button>
+                      <button
+                        onClick={handleCancelEdit}
+                        className="cancel-comment-button"
+                      >
+                        Cancel
+                      </button>
+                    </div>
                   </>
                 ) : (
                   <>
-                    <span>{cmt}</span>
-                    <button
-                      onClick={() => {
-                        setEditingIndex(idx);
-                        setEditingText(cmt);
-                      }}
-                    >
-                      Edit
-                    </button>
-                    <button onClick={() => handleDeleteComment(idx)}>
-                      Delete
-                    </button>
+                    <span className="comment-text">{comment}</span>
+                    <div className="comment-actions">
+                      <button
+                        onClick={() => {
+                          setEditingIndex(idx);
+                          setEditingText(comment);
+                        }}
+                        className="edit-comment-button"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDeleteComment(idx)}
+                        className="delete-comment-button"
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </>
                 )}
               </div>
@@ -88,8 +107,11 @@ const TaskCommentsPanel = ({
               placeholder="Add a comment..."
               value={commentInput}
               onChange={(e) => setCommentInput(e.target.value)}
+              className="comment-input"
             />
-            <button onClick={handleAddComment}>Post</button>
+            <button onClick={handleAddComment} className="post-comment-button">
+              Post
+            </button>
           </div>
         </div>
       </div>

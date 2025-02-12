@@ -5,8 +5,7 @@ import TaskCommentsPanel from "./TaskCommentsPanel";
 import "../styles/TaskCard.css";
 import { supabase } from "../utils/supabase";
 
-// Helper to determine color for priority.
-// If the task is in a completed column, return green.
+// Helper to determine the left border color based on task priority and completion
 const getPriorityColor = (priority, topPriority, isCompletedColumn) => {
   if (isCompletedColumn) return "#32CD32"; // Green for completed tasks
   if (topPriority) return "#FFD700"; // Gold for top priority
@@ -14,7 +13,7 @@ const getPriorityColor = (priority, topPriority, isCompletedColumn) => {
   return colors[priority] || "#ccc";
 };
 
-// Helper function that ensures the value is returned as an array.
+// Helper to ensure a field value is always an array.
 const normalizeArray = (value) => {
   if (Array.isArray(value)) return value;
   if (value !== null && value !== undefined) return [value];
@@ -27,7 +26,6 @@ const TaskCard = ({
   updateTask = () => {},
   deleteTask = () => {},
   isCompletedColumn,
-  onDeleteComment,
 }) => {
   // Normalize assigned_to and tags fields.
   const assignedToArray = normalizeArray(task.assigned_to);
@@ -47,11 +45,10 @@ const TaskCard = ({
     tags: initialTags,
   });
 
-  // States for editing subtasks.
+  // Subtasks editing state.
   const [editingSubtasks, setEditingSubtasks] = useState(false);
   const [editedSubtasks, setEditedSubtasks] = useState(task.subtasks || []);
 
-  // When task.subtasks changes (from parent updates), reset the editor.
   useEffect(() => {
     setEditedSubtasks(task.subtasks || []);
   }, [task.subtasks]);
@@ -66,6 +63,7 @@ const TaskCard = ({
       ? Math.round((completedSubtasks / totalSubtasks) * 100)
       : 0;
 
+  // Toggle subtask completion.
   const handleToggleSubtask = (subtaskId) => {
     const updatedSubtasks = (task.subtasks || []).map((st) =>
       st.id === subtaskId ? { ...st, completed: !st.completed } : st
@@ -84,41 +82,34 @@ const TaskCard = ({
       });
   };
 
+  // Handle changes in the task edit fields.
   const handleChange = (field, value) => {
     setEditedTask({ ...editedTask, [field]: value });
   };
 
-  // Updated saveEdits function with proper type conversions.
+  // Save the edits for the task details.
   const saveEdits = async () => {
     const updatedTask = {
       ...task,
       title: editedTask.title,
-      due_date: editedTask.dueDate, // should be in YYYY-MM-DD format
+      due_date: editedTask.dueDate, // expecting a YYYY-MM-DD string
       priority: editedTask.priority,
-      // Convert assignedTo string to an array of numbers
       assigned_to: editedTask.assignedTo
         .split(",")
         .map((s) => parseInt(s.trim(), 10))
         .filter((n) => !isNaN(n)),
-      // Convert relatedCustomer to a number (or null)
       related_customer: editedTask.relatedCustomer
         ? parseInt(editedTask.relatedCustomer.trim(), 10)
         : null,
-      // Tags as array of strings
       tags: editedTask.tags
         .split(",")
         .map((s) => s.trim())
         .filter(Boolean),
     };
 
-    // Update local state.
     updateTask(updatedTask);
-
-    // Convert task.id to a number if necessary.
     const taskId =
       typeof task.id === "number" ? task.id : parseInt(task.id, 10);
-
-    // Persist changes to Supabase.
     const { data, error } = await supabase
       .from("tasks")
       .update({
@@ -132,7 +123,6 @@ const TaskCard = ({
       })
       .eq("id", taskId)
       .select();
-
     if (error) {
       console.error("Error updating task:", error);
     } else {
@@ -141,6 +131,7 @@ const TaskCard = ({
     setEditMode(false);
   };
 
+  // Delete the task.
   const handleDelete = () => {
     if (window.confirm("Are you sure you want to delete this task?")) {
       deleteTask(task.id);
@@ -477,7 +468,12 @@ const TaskCard = ({
                         }}
                         className="comments-button"
                       >
-                        Comments
+                        Comments{" "}
+                        {task.comments && task.comments.length > 0 && (
+                          <span className="comments-badge">
+                            {task.comments.length}
+                          </span>
+                        )}
                       </button>
                     </>
                   )}
@@ -520,7 +516,21 @@ const TaskCard = ({
               console.error("Error updating task comments:", error.message);
             }
           }}
-          onDeleteComment={(index) => onDeleteComment(task.id, index)}
+          onDeleteComment={async (index) => {
+            const updatedComments = [...(task.comments || [])];
+            updatedComments.splice(index, 1);
+            updateTask({ ...task, comments: updatedComments });
+            const { error } = await supabase
+              .from("tasks")
+              .update({
+                comments: updatedComments,
+                updated_at: new Date().toISOString(),
+              })
+              .eq("id", task.id);
+            if (error) {
+              console.error("Error deleting comment:", error.message);
+            }
+          }}
         />
       )}
     </>

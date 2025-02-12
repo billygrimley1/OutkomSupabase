@@ -201,3 +201,13 @@
 .cancel-button {
   background: #ccc;
 }
+
+.comments-badge {
+  background-color: #ffd700;
+  color: #333;
+  border-radius: 12px;
+  padding: 2px 6px;
+  margin-left: 6px;
+  font-size: 0.8em;
+  vertical-align: middle;
+}
