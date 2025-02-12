@@ -30,8 +30,12 @@ const TaskCard = ({
   // Normalize assigned_to and tags fields.
   const assignedToArray = normalizeArray(task.assigned_to);
   const tagsArray = normalizeArray(task.tags);
-  const initialAssignedTo = assignedToArray.join(", ");
-  const initialTags = tagsArray.join(", ");
+  const assignedText = Array.isArray(task.assigned_to)
+    ? task.assigned_to.join(", ")
+    : task.assigned_to || "";
+  const tagsText = Array.isArray(task.tags)
+    ? task.tags.join(", ")
+    : task.tags || "";
 
   const [expanded, setExpanded] = useState(false);
   const [editMode, setEditMode] = useState(false);
@@ -40,9 +44,9 @@ const TaskCard = ({
     title: task.title,
     dueDate: task.due_date,
     priority: task.priority,
-    assignedTo: initialAssignedTo,
+    assignedTo: assignedText,
     relatedCustomer: task.related_customer || "",
-    tags: initialTags,
+    tags: tagsText,
   });
 
   // Subtasks editing state.
@@ -308,29 +312,31 @@ const TaskCard = ({
                       </span>
                     )}
                   </h4>
-                  <p>
-                    <strong>Due:</strong> {task.due_date}
-                  </p>
-                  <p>
-                    <strong>Priority:</strong> {task.priority}
-                  </p>
-                  <p>
-                    <strong>Assigned:</strong>{" "}
-                    {Array.isArray(task.assigned_to)
-                      ? task.assigned_to.join(", ")
-                      : task.assigned_to || ""}
-                  </p>
+                  {task.due_date && (
+                    <p>
+                      <strong>Due:</strong> {task.due_date}
+                    </p>
+                  )}
+                  {task.priority && (
+                    <p>
+                      <strong>Priority:</strong> {task.priority}
+                    </p>
+                  )}
+                  {assignedText.trim() !== "" && (
+                    <p>
+                      <strong>Assigned:</strong> {assignedText}
+                    </p>
+                  )}
                   {task.related_customer && (
                     <p>
                       <strong>Customer:</strong> {task.related_customer}
                     </p>
                   )}
-                  <p>
-                    <strong>Tags:</strong>{" "}
-                    {Array.isArray(task.tags)
-                      ? task.tags.join(", ")
-                      : task.tags || ""}
-                  </p>
+                  {tagsText.trim() !== "" && (
+                    <p>
+                      <strong>Tags:</strong> {tagsText}
+                    </p>
+                  )}
                   {totalSubtasks > 0 && (
                     <div className="progress-bar">
                       <div

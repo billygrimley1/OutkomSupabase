@@ -141,6 +141,17 @@
   background: #e0e0e0;
 }
 
+/* Comments Badge for visual cue */
+.comments-badge {
+  background-color: #ffd700;
+  color: #333;
+  border-radius: 12px;
+  padding: 2px 6px;
+  margin-left: 6px;
+  font-size: 0.8em;
+  vertical-align: middle;
+}
+
 /* ----------------------------------------- */
 /* Additional CSS for Subtasks Editor Styles */
 /* ----------------------------------------- */
@@ -200,14 +211,4 @@
 
 .cancel-button {
   background: #ccc;
-}
-
-.comments-badge {
-  background-color: #ffd700;
-  color: #333;
-  border-radius: 12px;
-  padding: 2px 6px;
-  margin-left: 6px;
-  font-size: 0.8em;
-  vertical-align: middle;
 }
