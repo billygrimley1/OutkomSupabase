@@ -21,6 +21,7 @@ const TaskKanban = ({
 
   // Fetch tasks and build board state.
   useEffect(() => {
+    // Build the initial columns from the board's columns or default columns.
     const initialColumns =
       board && board.columns
         ? board.columns.reduce((acc, col) => {
@@ -46,14 +47,40 @@ const TaskKanban = ({
           };
 
     async function fetchTasks() {
+      // Start with a base query.
       let query = supabase.from("tasks").select();
+
+      // Filter by board id.
       if (board && board.id) {
         query = query.eq("board_id", board.id);
       }
+
+      // Apply filtering based on filterCriteria.
+      if (filterCriteria) {
+        if (filterCriteria.tags && filterCriteria.tags.length > 0) {
+          // Assumes tasks.tags is stored as an array.
+          query = query.contains("tags", filterCriteria.tags);
+        }
+        if (filterCriteria.assignedTo && filterCriteria.assignedTo.length > 0) {
+          // Assumes tasks.assigned_to contains the assigned user's id or name.
+          query = query.in("assigned_to", filterCriteria.assignedTo);
+        }
+        if (filterCriteria.priority && filterCriteria.priority.length > 0) {
+          query = query.in("priority", filterCriteria.priority);
+        }
+        if (filterCriteria.dueDateStart) {
+          query = query.gte("due_date", filterCriteria.dueDateStart);
+        }
+        if (filterCriteria.dueDateEnd) {
+          query = query.lte("due_date", filterCriteria.dueDateEnd);
+        }
+      }
+
       const { data, error } = await query;
       if (error) {
         console.error("Error fetching tasks:", error.message);
       } else if (data) {
+        // Build a new board structure with the fetched tasks.
         const newBoard = {
           id: board ? board.id : "board-1",
           name: board ? board.name : "Task Board",
@@ -73,8 +100,9 @@ const TaskKanban = ({
         setKanbanBoard(newBoard);
       }
     }
+    // Add filterCriteria to the dependency array so that changes trigger a re-fetch.
     fetchTasks();
-  }, [board, showTemplateModal, tasksRefresh]);
+  }, [board, filterCriteria, showTemplateModal, tasksRefresh]);
 
   // updateTask: update local board state with an updated task.
   const updateTask = (updatedTask) => {
@@ -89,7 +117,6 @@ const TaskKanban = ({
 
   // deleteTask: remove the task from local state and delete it from the DB.
   const deleteTask = async (taskId) => {
-    // Update local state: remove task from tasks and from each column's cardIds.
     setKanbanBoard((prevBoard) => {
       if (!prevBoard) return prevBoard;
       const updatedTasks = { ...prevBoard.tasks };
@@ -102,10 +129,8 @@ const TaskKanban = ({
       });
       return { ...prevBoard, tasks: updatedTasks, columns: updatedColumns };
     });
-    // Convert taskId to number if necessary (since tasks.id is SERIAL).
     const numericTaskId =
       typeof taskId === "number" ? taskId : parseInt(taskId, 10);
-    // Delete from the DB.
     const { error } = await supabase
       .from("tasks")
       .delete()
@@ -270,6 +295,7 @@ const TaskKanban = ({
         <FilterModal
           initialFilters={filterCriteria}
           onApply={(filters) => {
+            setKanbanBoard(null); // Optional: Clear board to show loading state
             setFilterCriteria(filters);
             setShowFilterModal(false);
           }}

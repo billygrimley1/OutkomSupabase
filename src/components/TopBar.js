@@ -1,6 +1,6 @@
 // src/components/TopBar.js
 import React from "react";
-import { FaPlus, FaFilter, FaClone, FaSlidersH } from "react-icons/fa";
+import { FaPlus, FaFilter, FaClone, FaSlidersH, FaEdit } from "react-icons/fa";
 import "../styles/TopBar.css";
 
 const TopBar = ({
@@ -8,7 +8,9 @@ const TopBar = ({
   currentView,
   onAddTask,
   onOpenFilterModal,
+  // New props for board actions:
   onAddBoard,
+  onEditBoard,
 }) => {
   const handleAdd = () => {
     if (currentView === "workflows") {
@@ -65,6 +67,16 @@ const TopBar = ({
             <button onClick={handleFilter}>
               <FaFilter /> Filter
             </button>
+            {onAddBoard && (
+              <button onClick={onAddBoard}>
+                <FaPlus /> Add Board
+              </button>
+            )}
+            {onEditBoard && (
+              <button onClick={onEditBoard}>
+                <FaEdit /> Edit Board
+              </button>
+            )}
           </>
         )}
       </div>

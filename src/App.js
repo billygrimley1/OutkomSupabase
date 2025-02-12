@@ -12,6 +12,7 @@ import BoardConfigPanel from "./components/BoardConfigPanel";
 import Records from "./components/Records"; // New Records screen
 import Todos from "./components/Todos";
 import AddTaskModal from "./components/AddTaskModal";
+import FilterModal from "./components/FilterModal"; // Import FilterModal
 import "./styles/App.css";
 
 function App() {
@@ -28,6 +29,10 @@ function App() {
   // State variable to trigger refresh of tasks.
   const [tasksRefresh, setTasksRefresh] = useState(0);
 
+  // New state for board modals
+  const [showAddBoardModal, setShowAddBoardModal] = useState(false);
+  const [showEditBoardModal, setShowEditBoardModal] = useState(false);
+
   const renderView = () => {
     switch (view) {
       case "workflows":
@@ -40,6 +45,19 @@ function App() {
             showFilterModal={showFilterModal}
             setShowFilterModal={setShowFilterModal}
             tasksRefresh={tasksRefresh}
+            // Pass the board modal props to MultiTaskKanban:
+            externalShowAddBoardModal={showAddBoardModal}
+            externalShowEditBoardModal={showEditBoardModal}
+            onCloseAddBoardModal={() => setShowAddBoardModal(false)}
+            onCloseEditBoardModal={() => setShowEditBoardModal(false)}
+            onBoardAdded={(newBoard) => {
+              setShowAddBoardModal(false);
+              // Optionally, update board data or trigger a refresh here.
+            }}
+            onBoardUpdated={(updatedBoard) => {
+              setShowEditBoardModal(false);
+              // Optionally, update board data or trigger a refresh here.
+            }}
           />
         );
       case "customers":
@@ -70,6 +88,9 @@ function App() {
           currentView={view}
           onAddTask={() => setShowAddTaskModal(true)}
           onOpenFilterModal={() => setShowFilterModal(true)}
+          // Pass new callbacks for board actions to TopBar:
+          onAddBoard={() => setShowAddBoardModal(true)}
+          onEditBoard={() => setShowEditBoardModal(true)}
         />
         <div className="view-container">{renderView()}</div>
       </div>
@@ -78,9 +99,19 @@ function App() {
           onClose={() => setShowAddTaskModal(false)}
           onTaskAdded={(newTask) => {
             setShowAddTaskModal(false);
-            // Trigger a refresh so that new tasks are fetched
+            // Trigger a refresh so that new tasks are fetched.
             setTasksRefresh((prev) => prev + 1);
           }}
+        />
+      )}
+      {showFilterModal && (
+        <FilterModal
+          initialFilters={filterCriteria}
+          onApply={(filters) => {
+            setFilterCriteria(filters);
+            setShowFilterModal(false);
+          }}
+          onClose={() => setShowFilterModal(false)}
         />
       )}
     </div>

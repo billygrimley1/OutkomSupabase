@@ -6,11 +6,22 @@ import EditBoardModal from "./EditBoardModal";
 import { supabase } from "../utils/supabase";
 import "../styles/MultiTaskKanban.css";
 
-const MultiTaskKanban = ({ filterCriteria, setFilterCriteria, showFilterModal, setShowFilterModal, tasksRefresh }) => {
+const MultiTaskKanban = ({
+  filterCriteria,
+  setFilterCriteria,
+  showFilterModal,
+  setShowFilterModal,
+  tasksRefresh,
+  // These props are now provided from the parent:
+  externalShowAddBoardModal,
+  externalShowEditBoardModal,
+  onCloseAddBoardModal,
+  onCloseEditBoardModal,
+  onBoardAdded,
+  onBoardUpdated,
+}) => {
   const [boards, setBoards] = useState([]);
   const [selectedBoardId, setSelectedBoardId] = useState(null);
-  const [showAddBoardModal, setShowAddBoardModal] = useState(false);
-  const [showEditBoardModal, setShowEditBoardModal] = useState(false);
 
   useEffect(() => {
     async function fetchBoards() {
@@ -40,44 +51,29 @@ const MultiTaskKanban = ({ filterCriteria, setFilterCriteria, showFilterModal, s
       }
     }
     fetchBoards();
-  }, [selectedBoardId, showAddBoardModal, showEditBoardModal]);
-
-  const handleBoardAdded = (newBoard) => {
-    setBoards((prev) => [...prev, newBoard]);
-    setSelectedBoardId(newBoard.id);
-    setShowAddBoardModal(false);
-  };
-
-  const handleBoardUpdated = (updatedBoard) => {
-    setBoards((prev) =>
-      prev.map((b) => (b.id === updatedBoard.id ? updatedBoard : b))
-    );
-    setShowEditBoardModal(false);
-  };
+    // (We include externalShowAddBoardModal and externalShowEditBoardModal in the deps
+    // so that if a modal is opened externally, the boards may be re-fetched if needed.)
+  }, [selectedBoardId, externalShowAddBoardModal, externalShowEditBoardModal]);
 
   const selectedBoard = boards.find((b) => b.id === selectedBoardId);
 
   return (
     <div className="multi-kanban-container">
+      {/* Render board tabs for selecting a board */}
       <div className="board-tabs">
         {boards.map((board) => (
           <div
             key={board.id}
-            className={`board-tab ${board.id === selectedBoardId ? "active" : ""}`}
+            className={`board-tab ${
+              board.id === selectedBoardId ? "active" : ""
+            }`}
             onClick={() => setSelectedBoardId(board.id)}
           >
             {board.name}
           </div>
         ))}
-        <div className="board-tab add-board-tab" onClick={() => setShowAddBoardModal(true)}>
-          + Add Board
-        </div>
-        {selectedBoard && (
-          <div className="board-tab edit-board-tab" onClick={() => setShowEditBoardModal(true)}>
-            Edit Board
-          </div>
-        )}
       </div>
+
       {selectedBoard ? (
         <TaskKanban
           board={selectedBoard}
@@ -89,14 +85,19 @@ const MultiTaskKanban = ({ filterCriteria, setFilterCriteria, showFilterModal, s
       ) : (
         <p>No board selected. Please add a board.</p>
       )}
-      {showAddBoardModal && (
-        <AddBoardModal onClose={() => setShowAddBoardModal(false)} onBoardAdded={handleBoardAdded} />
+
+      {/* The modals still render exactly as before – only the buttons that trigger them have moved. */}
+      {externalShowAddBoardModal && (
+        <AddBoardModal
+          onClose={onCloseAddBoardModal}
+          onBoardAdded={onBoardAdded}
+        />
       )}
-      {showEditBoardModal && selectedBoard && (
+      {externalShowEditBoardModal && selectedBoard && (
         <EditBoardModal
           board={selectedBoard}
-          onClose={() => setShowEditBoardModal(false)}
-          onBoardUpdated={handleBoardUpdated}
+          onClose={onCloseEditBoardModal}
+          onBoardUpdated={onBoardUpdated}
         />
       )}
     </div>
