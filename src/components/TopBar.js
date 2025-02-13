@@ -2,16 +2,23 @@
 import React from "react";
 import { FaPlus, FaFilter, FaClone, FaSlidersH, FaEdit } from "react-icons/fa";
 import "../styles/TopBar.css";
+import { supabase } from "../utils/supabase";
 
 const TopBar = ({
   setView,
   currentView,
   onAddTask,
   onOpenFilterModal,
-  // New props for board actions:
   onAddBoard,
   onEditBoard,
 }) => {
+  // NEW: Logout handler
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    // Optionally reload the page to reset client state
+    window.location.reload();
+  };
+
   const handleAdd = () => {
     if (currentView === "workflows") {
       alert("Add new customer record (prototype)");
@@ -79,6 +86,8 @@ const TopBar = ({
             )}
           </>
         )}
+        {/* NEW: Logout button */}
+        <button onClick={handleLogout}>Logout</button>
       </div>
     </div>
   );
