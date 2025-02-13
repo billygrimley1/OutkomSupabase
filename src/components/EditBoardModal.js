@@ -1,6 +1,6 @@
 // src/components/EditBoardModal.js
 import React, { useState } from "react";
-import "../styles/AddBoardModal.css"; // Reusing the modal styles
+import "../styles/AddBoardModal.css"; // Reusing modal styles
 import { supabase } from "../utils/supabase";
 
 const EditBoardModal = ({ board, onClose, onBoardUpdated }) => {
@@ -23,71 +23,26 @@ const EditBoardModal = ({ board, onClose, onBoardUpdated }) => {
   );
 
   // Update a column's title.
-  const handleColumnTitleChange = (index, newTitle) => {
-    const newColumns = [...columns];
-    newColumns[index].title = newTitle;
-    setColumns(newColumns);
+  const handleColumnTitleChange = (index, value) => {
+    const newCols = [...columns];
+    newCols[index].title = value;
+    setColumns(newCols);
   };
 
   // Move a column up.
   const moveColumnUp = (index) => {
     if (index === 0) return;
-    const newColumns = [...columns];
-    [newColumns[index - 1], newColumns[index]] = [
-      newColumns[index],
-      newColumns[index - 1],
-    ];
-    setColumns(newColumns);
-
-    if (defaultColumnIndex === index) {
-      setDefaultColumnIndex(index - 1);
-    } else if (defaultColumnIndex === index - 1) {
-      setDefaultColumnIndex(index);
-    }
-    if (successColumnIndex === index) {
-      setSuccessColumnIndex(index - 1);
-    } else if (successColumnIndex === index - 1) {
-      setSuccessColumnIndex(index);
-    }
+    const newCols = [...columns];
+    [newCols[index - 1], newCols[index]] = [newCols[index], newCols[index - 1]];
+    setColumns(newCols);
   };
 
   // Move a column down.
   const moveColumnDown = (index) => {
     if (index === columns.length - 1) return;
-    const newColumns = [...columns];
-    [newColumns[index], newColumns[index + 1]] = [
-      newColumns[index + 1],
-      newColumns[index],
-    ];
-    setColumns(newColumns);
-
-    if (defaultColumnIndex === index) {
-      setDefaultColumnIndex(index + 1);
-    } else if (defaultColumnIndex === index + 1) {
-      setDefaultColumnIndex(index);
-    }
-    if (successColumnIndex === index) {
-      setSuccessColumnIndex(index + 1);
-    } else if (successColumnIndex === index + 1) {
-      setSuccessColumnIndex(index);
-    }
-  };
-
-  // Add a new column (without an id yet).
-  const addColumn = () => {
-    setColumns([...columns, { title: "" }]);
-  };
-
-  // Remove a column.
-  const removeColumn = (index) => {
-    const newColumns = columns.filter((_, i) => i !== index);
-    setColumns(newColumns);
-    if (defaultColumnIndex >= newColumns.length) {
-      setDefaultColumnIndex(0);
-    }
-    if (successColumnIndex >= newColumns.length) {
-      setSuccessColumnIndex(0);
-    }
+    const newCols = [...columns];
+    [newCols[index], newCols[index + 1]] = [newCols[index + 1], newCols[index]];
+    setColumns(newCols);
   };
 
   const handleSubmit = async (e) => {
@@ -104,50 +59,37 @@ const EditBoardModal = ({ board, onClose, onBoardUpdated }) => {
     }
     let updatedColumns = [];
     // Process each column.
-    for (const [index, col] of columns.entries()) {
+    for (let i = 0; i < columns.length; i++) {
+      const col = columns[i];
+      const updateData = {
+        title: col.title,
+        is_success: i === successColumnIndex,
+        position: i,
+      };
       if (col.id) {
-        // Update existing column.
-        const { data, error } = await supabase
+        const { error } = await supabase
           .from("board_columns")
-          .update({
-            title: col.title,
-            is_success: index === successColumnIndex,
-            position: index,
-          })
-          .eq("id", col.id)
-          .select();
+          .update(updateData)
+          .eq("id", col.id);
         if (error) {
           alert("Error updating column: " + error.message);
           return;
         }
-        if (data && data.length > 0) {
-          updatedColumns.push(data[0]);
-        }
+        updatedColumns.push({ ...col, ...updateData });
       } else {
-        // Insert new column.
         const { data, error } = await supabase
           .from("board_columns")
-          .insert({
-            board_id: board.id,
-            title: col.title,
-            is_success: index === successColumnIndex,
-            position: index,
-          })
+          .insert({ ...updateData, board_id: board.id })
           .select();
         if (error) {
           alert("Error inserting column: " + error.message);
           return;
         }
-        if (data && data.length > 0) {
-          updatedColumns.push(data[0]);
-        }
+        updatedColumns.push(data[0]);
       }
     }
-    // Determine default and success column IDs.
     const defaultColumn = updatedColumns[defaultColumnIndex];
     const successColumn = updatedColumns[successColumnIndex];
-
-    // Notify parent with the updated board information.
     onBoardUpdated({
       ...updatedBoardData[0],
       columns: updatedColumns,
@@ -175,59 +117,22 @@ const EditBoardModal = ({ board, onClose, onBoardUpdated }) => {
             <h4>Columns</h4>
             {columns.map((col, index) => (
               <div key={index} className="column-item">
-                <input
-                  type="text"
-                  value={col.title}
-                  onChange={(e) =>
-                    handleColumnTitleChange(index, e.target.value)
-                  }
-                  placeholder="Column name"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => moveColumnUp(index)}
-                  disabled={index === 0}
-                  title="Move Up"
-                >
-                  ▲
-                </button>
-                <button
-                  type="button"
-                  onClick={() => moveColumnDown(index)}
-                  disabled={index === columns.length - 1}
-                  title="Move Down"
-                >
-                  ▼
-                </button>
-                <button type="button" onClick={() => removeColumn(index)}>
-                  Remove
-                </button>
-                <div className="radio-group">
-                  <label>
-                    <input
-                      type="radio"
-                      name="defaultColumn"
-                      checked={defaultColumnIndex === index}
-                      onChange={() => setDefaultColumnIndex(index)}
-                    />
-                    Default
-                  </label>
-                  <label>
-                    <input
-                      type="radio"
-                      name="successColumn"
-                      checked={successColumnIndex === index}
-                      onChange={() => setSuccessColumnIndex(index)}
-                    />
-                    Success
-                  </label>
+                <label>
+                  Column Name:
+                  <input
+                    type="text"
+                    value={col.title}
+                    onChange={(e) =>
+                      handleColumnTitleChange(index, e.target.value)
+                    }
+                  />
+                </label>
+                <div className="reorder-group">
+                  <button onClick={() => moveColumnUp(index)}>↑</button>
+                  <button onClick={() => moveColumnDown(index)}>↓</button>
                 </div>
               </div>
             ))}
-            <button type="button" onClick={addColumn}>
-              Add Column
-            </button>
           </div>
           <div className="modal-buttons">
             <button type="submit">Save Board</button>

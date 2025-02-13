@@ -1,5 +1,5 @@
 // src/App.js
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import LeftNav from "./components/LeftNav";
 import TopBar from "./components/TopBar";
 import WorkflowKanban from "./components/WorkflowKanban";
@@ -9,10 +9,13 @@ import UserForm from "./components/UserForm";
 import CustomFieldsManager from "./components/CustomFieldsManager";
 import ReportsDashboard from "./components/ReportsDashboard";
 import BoardConfigPanel from "./components/BoardConfigPanel";
-import Records from "./components/Records"; // New Records screen
+import Records from "./components/Records";
 import Todos from "./components/Todos";
 import AddTaskModal from "./components/AddTaskModal";
-import FilterModal from "./components/FilterModal"; // Import FilterModal
+import AddBoardModal from "./components/AddBoardModal";
+import FilterModal from "./components/FilterModal";
+import Login from "./components/Login";
+import { supabase } from "./utils/supabase";
 import "./styles/App.css";
 
 function App() {
@@ -26,12 +29,44 @@ function App() {
     dueDateStart: "",
     dueDateEnd: "",
   });
-  // State variable to trigger refresh of tasks.
   const [tasksRefresh, setTasksRefresh] = useState(0);
 
-  // New state for board modals
+  // For board creation modals
   const [showAddBoardModal, setShowAddBoardModal] = useState(false);
   const [showEditBoardModal, setShowEditBoardModal] = useState(false);
+  const [boardType, setBoardType] = useState("workflow"); // default for workflows
+
+  const [session, setSession] = useState(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+    const { data: listener } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setSession(session);
+      }
+    );
+    return () => {
+      listener.subscription.unsubscribe();
+    };
+  }, []);
+
+  if (!session) {
+    return <Login onLogin={(session) => setSession(session)} />;
+  }
+
+  // Custom handler for adding boards
+  const handleAddBoard = () => {
+    if (view === "workflows") {
+      // In workflows view, open the BoardConfigPanel to allow customization.
+      setView("boardConfig");
+    } else if (view === "actions") {
+      // In tasks view, open a modal that creates a board with board_type "task".
+      setBoardType("task");
+      setShowAddBoardModal(true);
+    }
+  };
 
   const renderView = () => {
     switch (view) {
@@ -45,18 +80,17 @@ function App() {
             showFilterModal={showFilterModal}
             setShowFilterModal={setShowFilterModal}
             tasksRefresh={tasksRefresh}
-            // Pass the board modal props to MultiTaskKanban:
             externalShowAddBoardModal={showAddBoardModal}
             externalShowEditBoardModal={showEditBoardModal}
             onCloseAddBoardModal={() => setShowAddBoardModal(false)}
             onCloseEditBoardModal={() => setShowEditBoardModal(false)}
             onBoardAdded={(newBoard) => {
               setShowAddBoardModal(false);
-              // Optionally, update board data or trigger a refresh here.
+              // Optionally refresh task boards here.
             }}
             onBoardUpdated={(updatedBoard) => {
               setShowEditBoardModal(false);
-              // Optionally, update board data or trigger a refresh here.
+              // Optionally refresh task boards here.
             }}
           />
         );
@@ -67,7 +101,7 @@ function App() {
       case "customFields":
         return <CustomFieldsManager />;
       case "boardConfig":
-        return <BoardConfigPanel />;
+        return <BoardConfigPanel onBack={() => setView("workflows")} />;
       case "reports":
         return <ReportsDashboard />;
       case "todos":
@@ -88,8 +122,7 @@ function App() {
           currentView={view}
           onAddTask={() => setShowAddTaskModal(true)}
           onOpenFilterModal={() => setShowFilterModal(true)}
-          // Pass new callbacks for board actions to TopBar:
-          onAddBoard={() => setShowAddBoardModal(true)}
+          onAddBoard={handleAddBoard}
           onEditBoard={() => setShowEditBoardModal(true)}
         />
         <div className="view-container">{renderView()}</div>
@@ -99,7 +132,6 @@ function App() {
           onClose={() => setShowAddTaskModal(false)}
           onTaskAdded={(newTask) => {
             setShowAddTaskModal(false);
-            // Trigger a refresh so that new tasks are fetched.
             setTasksRefresh((prev) => prev + 1);
           }}
         />
@@ -112,6 +144,15 @@ function App() {
             setShowFilterModal(false);
           }}
           onClose={() => setShowFilterModal(false)}
+        />
+      )}
+      {showAddBoardModal && view === "actions" && (
+        <AddBoardModal
+          boardType={boardType}
+          onClose={() => setShowAddBoardModal(false)}
+          onBoardAdded={(newBoard) => {
+            setShowAddBoardModal(false);
+          }}
         />
       )}
     </div>
