@@ -28,7 +28,7 @@ const CustomerForm = () => {
   const [showUploader, setShowUploader] = useState(false);
   const [excelPreviewData, setExcelPreviewData] = useState(null);
 
-  // Load custom fields (if stored locally)
+  // Load custom fields from localStorage (if available)
   useEffect(() => {
     const stored = localStorage.getItem("customFields");
     if (stored) {
@@ -68,7 +68,7 @@ const CustomerForm = () => {
     );
   };
 
-  // Manual form submission handler
+  // Manual form submission handler (for single customer entry)
   const handleSubmit = async (e) => {
     e.preventDefault();
     const newCustomer = {
@@ -142,7 +142,11 @@ const CustomerForm = () => {
       }
     }
     console.log("Final Customers to upload:", customers);
-    const { error } = await supabase.from("customers").insert(customers);
+
+    // Use upsert so that an existing customer (by name) is updated instead of creating a new record.
+    const { error } = await supabase
+      .from("customers")
+      .upsert(customers, { onConflict: "name" });
     if (error) {
       alert("Error uploading customers: " + error.message);
     } else {
@@ -151,7 +155,7 @@ const CustomerForm = () => {
     }
   };
 
-  // Toggle the Excel uploader and clear any preview data if hiding
+  // Toggle the Excel uploader and clear any preview data if hiding.
   const toggleUploader = () => {
     if (showUploader) {
       setExcelPreviewData(null);
