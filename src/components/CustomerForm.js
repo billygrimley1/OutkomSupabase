@@ -1,6 +1,8 @@
 // src/components/CustomerForm.js
 import React, { useState, useEffect } from "react";
 import { supabase } from "../utils/supabase";
+import ExcelUploader from "./ExcelUploader";
+import ExcelPreviewEditor from "./ExcelPreviewEditor";
 import "../styles/CustomerForm.css";
 
 const CustomerForm = () => {
@@ -20,13 +22,13 @@ const CustomerForm = () => {
     riskStatus: "",
   });
 
-  // Load custom fields from localStorage (if any).
   const [customFields, setCustomFields] = useState([]);
-
-  // New state for available workflow boards and selected board IDs.
   const [workflowBoards, setWorkflowBoards] = useState([]);
   const [selectedBoards, setSelectedBoards] = useState([]);
+  const [showUploader, setShowUploader] = useState(false);
+  const [excelPreviewData, setExcelPreviewData] = useState(null);
 
+  // Load custom fields from localStorage (if available)
   useEffect(() => {
     const stored = localStorage.getItem("customFields");
     if (stored) {
@@ -66,9 +68,9 @@ const CustomerForm = () => {
     );
   };
 
+  // Manual form submission handler (for single customer entry)
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     const newCustomer = {
       name: formData.name,
       arr: parseFloat(formData.ARR),
@@ -88,21 +90,17 @@ const CustomerForm = () => {
       csm: formData.CSM,
       risk_status: formData.riskStatus,
       custom_data: {
-        // Store the selected board IDs for workflow Kanbans.
         workflow_boards: selectedBoards,
-        // Initialize per-board positions (kanbanPositions) as empty.
         kanbanPositions: {},
       },
     };
 
+    // Merge custom field values into custom_data.
     customFields.forEach((field) => {
       newCustomer.custom_data[field.name] = formData[field.name] || null;
     });
 
-    const { data, error } = await supabase
-      .from("customers")
-      .insert(newCustomer);
-
+    const { error } = await supabase.from("customers").insert(newCustomer);
     if (error) {
       console.error("Error adding customer:", error.message);
       alert("Error adding customer: " + error.message);
@@ -127,9 +125,84 @@ const CustomerForm = () => {
     }
   };
 
+  // When Excel data is parsed, store it for preview.
+  const handleExcelData = (excelData) => {
+    setExcelPreviewData(excelData);
+  };
+
+  // When the user commits the Excel upload from the preview editor.
+  const handleExcelCommit = async (customers, mapping) => {
+    // Validate that each customer has the mandatory fields: name and renewal_date.
+    for (const cust of customers) {
+      if (!cust.name || !cust.renewal_date) {
+        alert(
+          "One or more rows are missing mandatory fields (Customer Name and Renewal Date)."
+        );
+        return;
+      }
+    }
+    console.log("Final Customers to upload:", customers);
+
+    // Use upsert so that an existing customer (by name) is updated instead of creating a new record.
+    const { error } = await supabase
+      .from("customers")
+      .upsert(customers, { onConflict: "name" });
+    if (error) {
+      alert("Error uploading customers: " + error.message);
+    } else {
+      alert("Customers uploaded successfully!");
+      setExcelPreviewData(null);
+    }
+  };
+
+  // Toggle the Excel uploader and clear any preview data if hiding.
+  const toggleUploader = () => {
+    if (showUploader) {
+      setExcelPreviewData(null);
+      setShowUploader(false);
+    } else {
+      setShowUploader(true);
+    }
+  };
+
   return (
     <div className="customer-form-container">
       <h2>Add New Customer</h2>
+
+      {/* Toggle button for Excel Uploader */}
+      <button
+        onClick={toggleUploader}
+        style={{
+          marginBottom: "20px",
+          width: "100%",
+          padding: "10px",
+          background: "#ffd700",
+          border: "none",
+          borderRadius: "8px",
+          cursor: "pointer",
+        }}
+      >
+        {showUploader ? "Hide Excel Uploader" : "Upload via Excel"}
+      </button>
+
+      {/* Render ExcelUploader if toggled and no preview data */}
+      {showUploader && !excelPreviewData && (
+        <div className="excel-uploader-container">
+          <ExcelUploader onDataParsed={handleExcelData} />
+        </div>
+      )}
+
+      {/* Render ExcelPreviewEditor if Excel data has been parsed */}
+      {excelPreviewData && (
+        <div className="excel-preview-container">
+          <ExcelPreviewEditor
+            parsedData={excelPreviewData}
+            onCommit={handleExcelCommit}
+          />
+        </div>
+      )}
+
+      {/* Manual Customer Form */}
       <form onSubmit={handleSubmit}>
         <label>
           Name:
@@ -179,6 +252,7 @@ const CustomerForm = () => {
             placeholder="YYYY-MM-DD"
             value={formData.renewalDate}
             onChange={handleChange}
+            required
           />
         </label>
         <label>

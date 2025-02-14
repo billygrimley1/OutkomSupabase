@@ -15,6 +15,7 @@ import AddTaskModal from "./components/AddTaskModal";
 import AddBoardModal from "./components/AddBoardModal";
 import FilterModal from "./components/FilterModal";
 import Login from "./components/Login";
+import ExcelUploader from "./components/ExcelUploader"; // Import ExcelUploader
 import { supabase } from "./utils/supabase";
 import "./styles/App.css";
 
@@ -34,7 +35,7 @@ function App() {
   // For board creation modals
   const [showAddBoardModal, setShowAddBoardModal] = useState(false);
   const [showEditBoardModal, setShowEditBoardModal] = useState(false);
-  const [boardType, setBoardType] = useState("workflow"); // default for workflows
+  const [boardType, setBoardType] = useState("workflow");
 
   const [session, setSession] = useState(null);
 
@@ -59,10 +60,8 @@ function App() {
   // Custom handler for adding boards
   const handleAddBoard = () => {
     if (view === "workflows") {
-      // In workflows view, open the BoardConfigPanel to allow customization.
       setView("boardConfig");
     } else if (view === "actions") {
-      // In tasks view, open a modal that creates a board with board_type "task".
       setBoardType("task");
       setShowAddBoardModal(true);
     }
@@ -86,11 +85,9 @@ function App() {
             onCloseEditBoardModal={() => setShowEditBoardModal(false)}
             onBoardAdded={(newBoard) => {
               setShowAddBoardModal(false);
-              // Optionally refresh task boards here.
             }}
             onBoardUpdated={(updatedBoard) => {
               setShowEditBoardModal(false);
-              // Optionally refresh task boards here.
             }}
           />
         );
@@ -108,6 +105,17 @@ function App() {
         return <Todos />;
       case "records":
         return <Records />;
+      case "upload":
+        return (
+          <div style={{ padding: "20px" }}>
+            <h2>Excel Uploader</h2>
+            <ExcelUploader
+              onDataParsed={(data) =>
+                console.log("Data received from Excel uploader:", data)
+              }
+            />
+          </div>
+        );
       default:
         return <WorkflowKanban />;
     }

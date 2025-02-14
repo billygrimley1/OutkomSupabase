@@ -66,3 +66,43 @@
 .customer-form-container form button:hover {
   background: #e6c200;
 }
+
+/* Excel Uploader Container */
+.excel-uploader-container {
+  background: #ffffff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+/* Excel Preview Container */
+.excel-preview-container {
+  background: #ffffff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+  overflow-x: auto; /* Prevents horizontal overflow */
+}
+
+/* Styling the preview table */
+.excel-preview-container table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.excel-preview-container th,
+.excel-preview-container td {
+  padding: 8px;
+  text-align: left;
+  border: 1px solid #ccc;
+}
+
+.excel-preview-container th select,
+.excel-preview-container th input {
+  margin-top: 5px;
+  width: 100%;
+  padding: 4px;
+  font-size: 0.9em;
+}

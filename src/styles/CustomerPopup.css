@@ -15,26 +15,54 @@
 
 .customer-popup {
   background: #ffffff;
-  padding: 20px;
+  padding: 30px;
   border: 1px solid #ddd;
   border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   max-width: 600px;
   width: 90%;
   position: relative;
+  font-family: sans-serif;
 }
 
 .customer-popup h2 {
   text-align: center;
-  font-size: 1.5em;
+  font-size: 1.75em;
   margin-bottom: 20px;
   color: #333;
 }
 
 .customer-popup p {
-  font-size: 0.9em;
+  font-size: 1em;
   color: #333;
+  margin-bottom: 15px;
+  line-height: 1.5;
+}
+
+/* Style for custom fields section */
+.customer-popup .custom-fields {
+  margin-top: 20px;
+  border-top: 1px solid #ddd;
+  padding-top: 15px;
+}
+
+.customer-popup .custom-fields h3 {
+  font-size: 1.25em;
   margin-bottom: 10px;
+  color: #333;
+}
+
+.customer-popup .custom-fields ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.customer-popup .custom-fields li {
+  font-size: 1em;
+  color: #333;
+  padding: 5px 0;
+  border-bottom: 1px solid #f0f0f0;
 }
 
 /* Styled close button matching the system's buttons */
