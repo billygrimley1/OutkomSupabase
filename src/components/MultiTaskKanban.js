@@ -12,7 +12,6 @@ const MultiTaskKanban = ({
   showFilterModal,
   setShowFilterModal,
   tasksRefresh,
-  // These props are now provided from the parent:
   externalShowAddBoardModal,
   externalShowEditBoardModal,
   onCloseAddBoardModal,
@@ -51,15 +50,15 @@ const MultiTaskKanban = ({
       }
     }
     fetchBoards();
-    // (We include externalShowAddBoardModal and externalShowEditBoardModal in the deps
-    // so that if a modal is opened externally, the boards may be re-fetched if needed.)
   }, [selectedBoardId, externalShowAddBoardModal, externalShowEditBoardModal]);
 
   const selectedBoard = boards.find((b) => b.id === selectedBoardId);
 
+  // (Delete board functionality removed from tabs since deletion is available via edit.)
+
   return (
     <div className="multi-kanban-container">
-      {/* Render board tabs for selecting a board */}
+      {/* Render board tabs for selecting a board (without delete buttons) */}
       <div className="board-tabs">
         {boards.map((board) => (
           <div
@@ -86,7 +85,6 @@ const MultiTaskKanban = ({
         <p>No board selected. Please add a board.</p>
       )}
 
-      {/* The modals still render exactly as before – only the buttons that trigger them have moved. */}
       {externalShowAddBoardModal && (
         <AddBoardModal
           onClose={onCloseAddBoardModal}
