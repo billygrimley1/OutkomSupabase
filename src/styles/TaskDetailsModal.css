@@ -1,0 +1,98 @@
+/* Updated TaskDetailsModal.css based on TaskCard.css style */
+
+.task-details-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.task-details-modal {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 20px;
+  width: 90%;
+  max-width: 600px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.close-task-details {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: transparent;
+  border: none;
+  font-size: 1.5em;
+  cursor: pointer;
+}
+
+.task-details-content h2 {
+  margin: 0 0 8px;
+  font-size: 1.3em;
+  font-weight: 700;
+  color: #000;
+  background: linear-gradient(135deg, #f7f7f7, #eaeaea);
+  padding: 8px;
+  border-radius: 4px;
+  border-bottom: 2px solid #ccc;
+}
+
+.task-details-content p {
+  margin: 8px 0;
+  font-size: 0.95em;
+  color: #555;
+}
+
+.editable-input {
+  width: 100%;
+  padding: 6px;
+  margin: 6px 0;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+
+.modal-buttons {
+  margin-top: 20px;
+  display: flex;
+  gap: 10px;
+}
+
+.save-button {
+  padding: 8px 12px;
+  background: #ffd700;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9em;
+  transition: background 0.2s ease;
+  color: #000;
+}
+
+.save-button:hover {
+  background: #e6c200;
+}
+
+.cancel-button {
+  background: #ccc;
+  color: #000;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9em;
+  transition: background 0.2s ease;
+}
+
+.cancel-button:hover {
+  background: #b3b3b3;
+}

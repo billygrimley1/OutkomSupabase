@@ -1,4 +1,3 @@
-// src/components/CalendarView.js
 import React, { useState, useEffect } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
@@ -6,10 +5,12 @@ import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import listPlugin from "@fullcalendar/list";
 import { supabase } from "../utils/supabase";
+import TaskDetailsModal from "./TaskDetailsModal";
 
 const CalendarView = () => {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedTask, setSelectedTask] = useState(null);
 
   useEffect(() => {
     const fetchTasks = async () => {
@@ -26,9 +27,10 @@ const CalendarView = () => {
         setLoading(false);
         return;
       }
+      // Use left join (no !inner) so tasks without matching board_columns are still returned.
       const { data, error } = await supabase
         .from("tasks")
-        .select("*")
+        .select("*, board_columns(*)")
         .eq("owner_id", session.user.id);
       if (error) {
         console.error("Error fetching tasks:", error.message);
@@ -37,17 +39,26 @@ const CalendarView = () => {
       }
       const mappedEvents = data
         .filter((task) => task.due_date)
-        .map((task) => ({
-          id: task.id,
-          title: task.title,
-          start: task.due_date,
-          color:
-            task.priority === "High"
+        .map((task) => {
+          // Determine if task is in a success column using the joined board_columns data.
+          const isCompleted =
+            task.board_columns &&
+            task.board_columns.length > 0 &&
+            task.board_columns[0].is_success;
+          return {
+            id: task.id,
+            title: task.title,
+            start: task.due_date,
+            color: isCompleted
+              ? "#ccc" // Greyed out if in success column
+              : task.priority === "High"
               ? "#ff4d4d"
               : task.priority === "Medium"
               ? "#ffd700"
               : "#32CD32",
-        }));
+            extendedProps: { ...task },
+          };
+        });
       setEvents(mappedEvents);
       setLoading(false);
     };
@@ -72,7 +83,14 @@ const CalendarView = () => {
         }}
         events={events}
         selectable={true}
+        eventClick={(info) => setSelectedTask(info.event.extendedProps)}
       />
+      {selectedTask && (
+        <TaskDetailsModal
+          task={selectedTask}
+          onClose={() => setSelectedTask(null)}
+        />
+      )}
     </div>
   );
 };
