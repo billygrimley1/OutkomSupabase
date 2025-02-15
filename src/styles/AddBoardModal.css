@@ -1,4 +1,4 @@
-/* AddBoardModal.css */
+/* Updated AddBoardModal.css */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -22,19 +22,18 @@
   }
 }
 
-/* Updated modal container */
 .modal {
-  background: #ffffff;
+  background: #fff;
   padding: 20px;
   border: 1px solid #ddd;
   border-radius: 8px;
-  width: 90vw; /* Use 90% of the viewport width */
-  max-width: 500px; /* Allow a larger maximum width */
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  width: 90vw;
+  max-width: 500px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
   animation: slideUp 0.3s ease;
   margin: 0 auto;
-  overflow-x: hidden; /* Prevent horizontal scrolling */
-  overflow-y: auto; /* Allow vertical scrolling if needed */
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 @keyframes slideUp {
@@ -51,7 +50,7 @@
 .modal h3 {
   margin: 0 0 20px;
   font-size: 1.4rem;
-  color: #333;
+  color: #000;
   text-align: center;
 }
 
@@ -59,7 +58,7 @@
   display: flex;
   flex-direction: column;
   font-size: 0.9rem;
-  color: #333;
+  color: #000;
   margin-bottom: 12px;
 }
 
@@ -68,7 +67,7 @@
   margin-top: 6px;
   border: 1px solid #ccc;
   border-radius: 8px;
-  background: linear-gradient(135deg, #ffffff, #f9f9f9);
+  background: linear-gradient(135deg, #fff, #f9f9f9);
   font-size: 1rem;
   transition: border 0.2s ease, box-shadow 0.2s ease;
 }
@@ -96,7 +95,7 @@
   padding: 8px 10px;
   border: 1px solid #ccc;
   border-radius: 8px;
-  background: linear-gradient(135deg, #ffffff, #f9f9f9);
+  background: linear-gradient(135deg, #fff, #f9f9f9);
   transition: border 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -144,7 +143,7 @@
   border: none;
   border-radius: 8px;
   background: #ffd700;
-  color: #333;
+  color: #000;
   font-size: 1rem;
   cursor: pointer;
   transition: background 0.3s ease;
@@ -156,7 +155,7 @@
 
 .modal-buttons button.secondary {
   background: #ccc;
-  color: #333;
+  color: #000;
 }
 
 .modal-buttons button.secondary:hover {

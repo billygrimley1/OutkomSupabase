@@ -1,5 +1,4 @@
-/* CustomerPopup.css */
-
+/* Updated CustomerPopup.css */
 .customer-popup-overlay {
   position: fixed;
   top: 0;
@@ -14,7 +13,7 @@
 }
 
 .customer-popup {
-  background: #ffffff;
+  background: #fff;
   padding: 30px;
   border: 1px solid #ddd;
   border-radius: 8px;
@@ -29,17 +28,17 @@
   text-align: center;
   font-size: 1.75em;
   margin-bottom: 20px;
-  color: #333;
+  color: #000;
 }
 
 .customer-popup p {
   font-size: 1em;
-  color: #333;
+  color: #000;
   margin-bottom: 15px;
   line-height: 1.5;
 }
 
-/* Style for custom fields section */
+/* Custom fields section */
 .customer-popup .custom-fields {
   margin-top: 20px;
   border-top: 1px solid #ddd;
@@ -49,7 +48,7 @@
 .customer-popup .custom-fields h3 {
   font-size: 1.25em;
   margin-bottom: 10px;
-  color: #333;
+  color: #000;
 }
 
 .customer-popup .custom-fields ul {
@@ -60,18 +59,18 @@
 
 .customer-popup .custom-fields li {
   font-size: 1em;
-  color: #333;
+  color: #000;
   padding: 5px 0;
   border-bottom: 1px solid #f0f0f0;
 }
 
-/* Styled close button matching the system's buttons */
+/* Close button */
 .close-button {
   position: absolute;
   top: 10px;
   right: 10px;
   background: #ffd700;
-  color: #333;
+  color: #000;
   border: none;
   border-radius: 8px;
   padding: 5px 10px;

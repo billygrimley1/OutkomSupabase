@@ -1,4 +1,4 @@
-/* AddTaskModal.css */
+/* Updated AddTaskModal.css */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -23,7 +23,7 @@
 }
 
 .modal {
-  background: #ffffff;
+  background: #fff;
   padding: 20px;
   border: 1px solid #ddd;
   border-radius: 8px;
@@ -31,7 +31,7 @@
   max-width: 95%;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
   animation: slideUp 0.3s ease;
 }
 
@@ -50,7 +50,7 @@
 .modal h3 {
   margin: 0 0 20px;
   font-size: 1.5rem;
-  color: #333;
+  color: #000;
   text-align: center;
 }
 
@@ -58,7 +58,7 @@
   display: flex;
   flex-direction: column;
   font-size: 0.9rem;
-  color: #333;
+  color: #000;
   margin-bottom: 12px;
 }
 
@@ -69,7 +69,7 @@
   margin-top: 6px;
   border: 1px solid #ccc;
   border-radius: 8px;
-  background: linear-gradient(135deg, #ffffff, #f9f9f9);
+  background: linear-gradient(135deg, #fff, #f9f9f9);
   font-size: 1rem;
   transition: border 0.2s ease, box-shadow 0.2s ease;
 }
@@ -98,7 +98,7 @@
   padding: 8px 10px;
   border: 1px solid #ccc;
   border-radius: 8px;
-  background: linear-gradient(135deg, #ffffff, #f9f9f9);
+  background: linear-gradient(135deg, #fff, #f9f9f9);
   transition: border 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -135,7 +135,7 @@
   border: none;
   border-radius: 8px;
   background: #ffd700;
-  color: #333;
+  color: #000;
   font-size: 1rem;
   cursor: pointer;
   transition: background 0.3s ease;
@@ -147,7 +147,7 @@
 
 .modal-buttons button.secondary {
   background: #ccc;
-  color: #333;
+  color: #000;
 }
 
 .modal-buttons button.secondary:hover {

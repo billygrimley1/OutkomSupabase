@@ -1,3 +1,4 @@
+/* Updated TaskCommentsPanel.css */
 .task-comments-overlay {
   position: fixed;
   top: 0;
@@ -59,20 +60,22 @@
 .task-comments-header h3 {
   margin: 0;
   font-size: 1.2em;
-  color: #333;
+  color: #000;
 }
 
 .close-comments-button {
-  background: transparent;
+  background: #ffd700;
   border: none;
-  color: #333;
-  font-size: 1.5em;
+  border-radius: 4px;
+  padding: 5px 10px;
   cursor: pointer;
-  transition: color 0.2s ease;
+  font-size: 0.9em;
+  transition: background 0.2s ease;
+  color: #000;
 }
 
 .close-comments-button:hover {
-  color: #555;
+  background: #e6c200;
 }
 
 .task-comments-body {
@@ -85,68 +88,74 @@
 
 .task-comment-item {
   background: #f9f9f9;
-  padding: 10px 12px;
-  border-radius: 8px;
+  border: 1px solid #eee;
+  border-radius: 4px;
+  padding: 8px;
+  margin-bottom: 8px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-}
-
-.comment-text {
-  flex: 1;
-  margin-right: 12px;
-  color: #444;
-}
-
-.comment-input {
-  flex: 1;
-  padding: 8px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
   font-size: 0.9em;
-  outline: none;
-  transition: border 0.2s ease;
+  color: #555;
 }
 
-.comment-input:focus {
-  border-color: #888;
+.task-comment-item input[type="text"] {
+  flex-grow: 1;
+  margin-right: 5px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 4px 6px;
+  font-size: 0.9em;
 }
 
-.comment-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.edit-comment-button,
-.delete-comment-button,
-.save-comment-button,
-.cancel-comment-button,
-.post-comment-button {
-  padding: 6px 10px;
+.task-comment-item button {
   background: #ffd700;
   border: none;
-  border-radius: 8px;
+  border-radius: 4px;
+  padding: 4px 8px;
+  margin-left: 4px;
   cursor: pointer;
-  font-size: 0.9em;
+  font-size: 0.8em;
   transition: background 0.2s ease;
+  color: #000;
 }
 
-.edit-comment-button:hover,
-.delete-comment-button:hover,
-.save-comment-button:hover,
-.cancel-comment-button:hover,
-.post-comment-button:hover {
+.task-comment-item button:hover {
   background: #e6c200;
-}
-
-.no-comments {
-  font-size: 0.9em;
-  color: #999;
-  text-align: center;
 }
 
 .task-add-comment {
   display: flex;
-  gap: 8px;
-  align-items: center;
+  margin-top: 15px;
+}
+
+.task-add-comment input[type="text"] {
+  flex-grow: 1;
+  padding: 6px 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+
+.task-add-comment button {
+  background: #ffd700;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 10px;
+  margin-left: 8px;
+  cursor: pointer;
+  font-size: 0.9em;
+  transition: background 0.2s ease;
+  color: #000;
+}
+
+.task-add-comment button:hover {
+  background: #e6c200;
+}
+
+.no-comments {
+  font-style: italic;
+  color: #999;
+  text-align: center;
+  margin: 10px 0;
 }

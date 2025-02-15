@@ -1,12 +1,12 @@
-/* Records.css */
+/* Updated Records.css */
 .records-container {
   padding: 20px;
   max-width: 1200px;
   margin: 20px auto;
-  background: #ffffff;
+  background: #fff;
   border: 1px solid #ddd;
   border-radius: 8px;
-  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
   overflow-x: auto;
 }
 
@@ -14,10 +14,9 @@
   text-align: center;
   font-size: 1.8em;
   margin-bottom: 20px;
-  color: #333;
+  color: #000;
 }
 
-/* Toggle Filter Button */
 .toggle-filter-btn {
   display: block;
   margin: 0 auto 15px auto;
@@ -28,13 +27,13 @@
   cursor: pointer;
   font-size: 1em;
   transition: background 0.2s ease;
+  color: #000;
 }
 
 .toggle-filter-btn:hover {
   background: #e6c200;
 }
 
-/* Filter Dropdown Panel */
 .filter-dropdown {
   padding: 15px;
   border: 1px solid #ddd;
@@ -56,7 +55,7 @@
 
 .filter-field label {
   font-size: 0.9em;
-  color: #333;
+  color: #000;
   margin-bottom: 5px;
 }
 
@@ -65,7 +64,7 @@
   font-size: 0.95em;
   border: 1px solid #ccc;
   border-radius: 8px;
-  background: linear-gradient(135deg, #ffffff, #f9f9f9);
+  background: linear-gradient(135deg, #fff, #f9f9f9);
   transition: border 0.2s ease, box-shadow 0.2s ease;
   box-sizing: border-box;
 }
@@ -76,7 +75,6 @@
   outline: none;
 }
 
-/* Table container */
 .records-table-container {
   overflow-x: auto;
 }
@@ -101,10 +99,11 @@
   background: #f7f7f7;
   cursor: pointer;
   user-select: none;
+  color: #000;
 }
 
 .records-table tr:nth-child(even) {
-  background: #fefefe;
+  background: #fff;
 }
 
 .records-table input[type="text"],
@@ -128,7 +127,7 @@
 .records-table button {
   padding: 5px 10px;
   background: #ffd700;
-  color: #333;
+  color: #000;
   border: none;
   border-radius: 4px;
   cursor: pointer;
@@ -147,5 +146,5 @@
   gap: 5px;
   margin-right: 5px;
   font-size: 0.85em;
-  color: #333;
+  color: #000;
 }

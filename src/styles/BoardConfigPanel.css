@@ -1,20 +1,19 @@
-/* BoardConfigPanel.css */
-
+/* Updated BoardConfigPanel.css */
 .board-config-container {
   max-width: 500px;
   margin: 20px auto;
   padding: 20px;
-  background: #ffffff;
+  background: #fff;
   border: 1px solid #ddd;
   border-radius: 8px;
-  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
 .board-config-container h2 {
   text-align: center;
   font-size: 1.5em;
   margin-bottom: 20px;
-  color: #333;
+  color: #000;
 }
 
 .config-form {
@@ -25,7 +24,7 @@
 
 .config-form label {
   font-size: 0.9em;
-  color: #333;
+  color: #000;
   display: block;
 }
 
@@ -36,7 +35,7 @@
   font-size: 0.95em;
   border: 1px solid #ccc;
   border-radius: 8px;
-  background: linear-gradient(135deg, #ffffff, #f9f9f9);
+  background: linear-gradient(135deg, #fff, #f9f9f9);
   transition: border 0.2s ease, box-shadow 0.2s ease;
   width: 100%;
   box-sizing: border-box;
@@ -59,7 +58,7 @@
   flex: 1;
   padding: 10px;
   background: #ffd700;
-  color: #333;
+  color: #000;
   border: none;
   border-radius: 8px;
   cursor: pointer;
@@ -78,7 +77,7 @@
   border-radius: 8px;
 }
 
-/* Radio group for success and failure selectors */
+/* Radio group */
 .radio-group {
   display: flex;
   gap: 20px;
@@ -91,10 +90,10 @@
   align-items: center;
   gap: 5px;
   font-size: 0.9em;
-  color: #333;
+  color: #000;
 }
 
-/* Reorder group styling */
+/* Reorder group */
 .reorder-group {
   display: flex;
   gap: 10px;
@@ -116,7 +115,7 @@
   background: #e6c200;
 }
 
-/* Remove column button styling */
+/* Remove column button */
 .remove-column-btn {
   padding: 8px;
   background: #ff4d4d;
@@ -134,7 +133,7 @@
   background: #e04343;
 }
 
-/* Buttons for adding column and saving configuration */
+/* Form buttons */
 .config-form-buttons {
   display: flex;
   gap: 10px;
@@ -144,7 +143,7 @@
   flex: 1;
   padding: 10px;
   background: #ffd700;
-  color: #333;
+  color: #000;
   border: none;
   border-radius: 8px;
   cursor: pointer;
@@ -156,7 +155,7 @@
   background: #e6c200;
 }
 
-/* Back button styling */
+/* Back button */
 .back-button {
   margin-top: 20px;
   padding: 10px;
