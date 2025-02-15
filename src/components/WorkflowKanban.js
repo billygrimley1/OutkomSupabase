@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { DragDropContext, Droppable } from "react-beautiful-dnd";
 import Card from "./Card";
 import CustomerPopup from "./CustomerPopup";
-import BoardConfigPanel from "./BoardConfigPanel"; // for board configuration
+import BoardConfigPanel from "./BoardConfigPanel";
 import "../styles/Kanban.css";
 import "../styles/WorkflowKanban.css";
 import { supabase } from "../utils/supabase";
@@ -115,9 +115,60 @@ const WorkflowKanban = ({ setView }) => {
     return colMap;
   };
 
-  // (Removal of delete button from board tabs since deletion is handled in config.)
-  const onDragEnd = (result) => {
-    // (existing onDragEnd code)
+  // onDragEnd implementation for moving workflow cards.
+  const onDragEnd = async (result) => {
+    const { destination, source, draggableId } = result;
+    if (!destination) return;
+    if (
+      destination.droppableId === source.droppableId &&
+      destination.index === source.index
+    )
+      return;
+
+    const customerId = draggableId;
+    const customer = customers[customerId];
+    if (!customer) return;
+
+    // Update customer's kanbanPositions for the active board.
+    const updatedKanbanPositions = {
+      ...(customer.custom_data?.kanbanPositions || {}),
+      [activeBoard.id]: destination.droppableId,
+    };
+
+    const updatedCustomer = {
+      ...customer,
+      custom_data: {
+        ...customer.custom_data,
+        kanbanPositions: updatedKanbanPositions,
+      },
+    };
+
+    // Update record in Supabase.
+    const { error } = await supabase
+      .from("customers")
+      .update({ custom_data: updatedCustomer.custom_data })
+      .eq("id", customerId);
+    if (error) {
+      console.error("Error updating customer position:", error.message);
+      return;
+    }
+
+    // Update local state.
+    setCustomers((prev) => ({
+      ...prev,
+      [customerId]: updatedCustomer,
+    }));
+
+    // Check if the destination column is designated as the success column.
+    const destCol = columns.find(
+      (col) => String(col.id) === destination.droppableId
+    );
+    if (destCol && destCol.is_success) {
+      setShowConfetti(true);
+      setTimeout(() => {
+        setShowConfetti(false);
+      }, 3000);
+    }
   };
 
   return view === "boardConfig" ? (
