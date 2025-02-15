@@ -1,32 +1,49 @@
-// src/components/ExcelUploader.js
 import React, { useCallback, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import * as XLSX from "xlsx";
 
 const ExcelUploader = ({ onDataParsed }) => {
   const [fileName, setFileName] = useState("");
+  const [progress, setProgress] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const onDrop = useCallback(
     (acceptedFiles) => {
+      setError("");
       if (acceptedFiles && acceptedFiles.length > 0) {
         const file = acceptedFiles[0];
         setFileName(file.name);
+        setLoading(true);
+        setProgress(0);
 
         const reader = new FileReader();
-        reader.onload = (e) => {
-          const data = new Uint8Array(e.target.result);
-          const workbook = XLSX.read(data, { type: "array" });
-          const sheetName = workbook.SheetNames[0];
-          const worksheet = workbook.Sheets[sheetName];
-          // Convert the sheet to JSON (array of arrays)
-          const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-          console.log("Parsed Excel data:", jsonData);
-          if (onDataParsed) {
-            onDataParsed(jsonData);
+        reader.onprogress = (e) => {
+          if (e.lengthComputable) {
+            const percent = Math.round((e.loaded / e.total) * 100);
+            setProgress(percent);
           }
         };
-        reader.onerror = (error) => {
-          console.error("Error reading file:", error);
+        reader.onload = (e) => {
+          try {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: "array" });
+            const sheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[sheetName];
+            const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+            if (onDataParsed) {
+              onDataParsed(jsonData);
+            }
+          } catch (err) {
+            console.error("Error parsing Excel data:", err);
+            setError("Error parsing Excel file. Please check the file format.");
+          }
+          setLoading(false);
+        };
+        reader.onerror = (err) => {
+          console.error("Error reading file:", err);
+          setError("Error reading file. Please try again.");
+          setLoading(false);
         };
         reader.readAsArrayBuffer(file);
       }
@@ -64,6 +81,12 @@ const ExcelUploader = ({ onDataParsed }) => {
             <strong>Selected File:</strong> {fileName}
           </p>
         )}
+        {loading && (
+          <p>
+            Uploading: {progress}% {progress === 100 && "Processing..."}
+          </p>
+        )}
+        {error && <p style={{ color: "red" }}>{error}</p>}
       </div>
     </div>
   );

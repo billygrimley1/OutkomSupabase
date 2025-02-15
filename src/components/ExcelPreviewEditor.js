@@ -1,31 +1,70 @@
-// src/components/ExcelPreviewEditor.js
 import React, { useState, useEffect } from "react";
 import { supabase } from "../utils/supabase";
 
-// Updated standard mapping using snake_case to match your database columns.
+// Extend auto-mapping to all standard customer fields.
+// All keys should be in lowercase.
 const defaultStandardMapping = {
   "customer name": "name",
-  "renewal date": "renewal_date",
+  arr: "arr",
   "health rank": "health_rank",
+  "contract start": "contract_start_date",
+  "contract start date": "contract_start_date",
+  "renewal date": "renewal_date",
+  "last login": "last_login",
+  "product usage": "product_usage",
+  "number of users": "number_of_users",
+  "main contact": "main_contact",
+  "main contact email": "main_contact_email",
+  status: "status",
+  csm: "csm",
+  "risk status": "risk_status",
 };
 
+// List of standard customer fields (fields that exist in the customers table).
+const standardFields = [
+  "name",
+  "arr",
+  "health_rank",
+  "contract_start_date",
+  "renewal_date",
+  "last_login",
+  "product_usage",
+  "number_of_users",
+  "main_contact",
+  "main_contact_email",
+  "status",
+  "csm",
+  "risk_status",
+];
+
+// Update dropdown options to include all standard fields, plus options for "Do Not Import" and "Custom Field".
 const standardOptions = [
-  { label: "Customer Name", value: "name" },
-  { label: "Renewal Date", value: "renewal_date" },
-  { label: "Health Rank", value: "health_rank" },
   { label: "Do Not Import", value: "" },
+  { label: "Customer Name", value: "name" },
+  { label: "ARR", value: "arr" },
+  { label: "Health Rank", value: "health_rank" },
+  { label: "Contract Start Date", value: "contract_start_date" },
+  { label: "Renewal Date", value: "renewal_date" },
+  { label: "Last Login", value: "last_login" },
+  { label: "Product Usage", value: "product_usage" },
+  { label: "Number of Users", value: "number_of_users" },
+  { label: "Main Contact", value: "main_contact" },
+  { label: "Main Contact Email", value: "main_contact_email" },
+  { label: "Status", value: "status" },
+  { label: "CSM", value: "csm" },
+  { label: "Risk Status", value: "risk_status" },
   { label: "Custom Field", value: "custom" },
 ];
 
 const ExcelPreviewEditor = ({ parsedData, onCommit }) => {
   const [headers, setHeaders] = useState([]);
-  const [mapping, setMapping] = useState({}); // key: header, value: mapped field (or custom field name)
-  const [customMapping, setCustomMapping] = useState({}); // key: header, value: custom field name entered by the user
+  const [mapping, setMapping] = useState({}); // key: header, value: mapped field or custom field name
+  const [customMapping, setCustomMapping] = useState({}); // key: header, value: custom field name provided by user
   const [rows, setRows] = useState([]);
 
   useEffect(() => {
     if (parsedData.length > 0) {
-      // Convert header values to strings and trim them.
+      // Convert header values to strings, trimmed and lowercased for comparison.
       const headerRow = parsedData[0].map((h) => h.toString().trim());
       setHeaders(headerRow);
       const initialMapping = {};
@@ -34,7 +73,7 @@ const ExcelPreviewEditor = ({ parsedData, onCommit }) => {
         if (defaultStandardMapping[lower]) {
           initialMapping[header] = defaultStandardMapping[lower];
         } else {
-          initialMapping[header] = "custom"; // default to custom field
+          initialMapping[header] = "custom";
         }
       });
       setMapping(initialMapping);
@@ -44,7 +83,6 @@ const ExcelPreviewEditor = ({ parsedData, onCommit }) => {
 
   const handleMappingChange = (header, newValue) => {
     setMapping((prev) => ({ ...prev, [header]: newValue }));
-    // If a standard option is chosen, clear any custom mapping.
     if (newValue !== "custom") {
       setCustomMapping((prev) => {
         const updated = { ...prev };
@@ -56,7 +94,7 @@ const ExcelPreviewEditor = ({ parsedData, onCommit }) => {
 
   const handleCustomNameChange = (header, newName) => {
     setCustomMapping((prev) => ({ ...prev, [header]: newName }));
-    // Also update mapping so that when committing, we use the custom name.
+    // When a custom name is provided, update mapping so it uses that name.
     setMapping((prev) => ({ ...prev, [header]: newName ? newName : "custom" }));
   };
 
@@ -70,7 +108,6 @@ const ExcelPreviewEditor = ({ parsedData, onCommit }) => {
 
   // Ensure that a custom field definition exists in Supabase.
   const ensureCustomFieldDefinition = async (header, customName) => {
-    // Use the custom name if provided; otherwise, fall back to the header.
     const fieldLabel = header;
     const fieldName =
       customName && customName.trim()
@@ -85,7 +122,6 @@ const ExcelPreviewEditor = ({ parsedData, onCommit }) => {
       return;
     }
     if (!data || data.length === 0) {
-      // Insert the new custom field definition with default type "text"
       const { error: insertError } = await supabase
         .from("custom_field_definitions")
         .insert({
@@ -110,28 +146,27 @@ const ExcelPreviewEditor = ({ parsedData, onCommit }) => {
     // For each header mapped as custom (non-standard and non-empty), ensure a field definition exists.
     for (const header of headers) {
       let mapVal = mapping[header];
+      // If mapping is "custom" with no custom name, skip auto-definition.
       if (
         mapVal &&
-        !["name", "renewal_date", "health_rank", ""].includes(mapVal)
+        mapVal !== "" &&
+        mapVal !== "custom" &&
+        !standardFields.includes(mapVal)
       ) {
-        // Ensure the definition exists using the custom mapping (if provided) or header.
         await ensureCustomFieldDefinition(header, customMapping[header]);
       }
     }
-
     // Build an array of customer objects based on the mapping.
     const customers = rows.map((row) => {
       let customer = { custom_data: {} };
       headers.forEach((header, index) => {
         let mapVal = mapping[header];
-        // If mapping is "custom" (and no custom name provided), default to header.
         if (mapVal === "custom") {
-          mapVal = header;
+          mapVal = header; // fallback to header if no custom name provided
         }
-        // Skip if user selected "Do Not Import" (empty string)
+        // Skip if "Do Not Import"
         if (!mapVal) return;
         let value = row[index];
-        // Ensure value is a string (or if a number, keep as is)
         if (value !== null && typeof value === "object") {
           try {
             value = JSON.stringify(value);
@@ -139,14 +174,14 @@ const ExcelPreviewEditor = ({ parsedData, onCommit }) => {
             value = "";
           }
         } else if (value !== null && value !== undefined) {
-          // If it's not a number, convert to string.
           if (isNaN(value)) {
             value = value.toString();
           }
         } else {
           value = "";
         }
-        if (["name", "renewal_date", "health_rank"].includes(mapVal)) {
+        // If the mapping is one of the standard customer fields, assign it directly; otherwise, store in custom_data.
+        if (standardFields.includes(mapVal)) {
           customer[mapVal] = value;
         } else {
           customer.custom_data[mapVal] = value;
@@ -182,9 +217,8 @@ const ExcelPreviewEditor = ({ parsedData, onCommit }) => {
                   ))}
                 </select>
                 {(mapping[header] === "custom" ||
-                  !["name", "renewal_date", "health_rank", ""].includes(
-                    mapping[header]
-                  )) && (
+                  (!standardFields.includes(mapping[header]) &&
+                    mapping[header] !== "")) && (
                   <input
                     type="text"
                     placeholder="Custom field name"
@@ -192,6 +226,13 @@ const ExcelPreviewEditor = ({ parsedData, onCommit }) => {
                     onChange={(e) =>
                       handleCustomNameChange(header, e.target.value)
                     }
+                    style={{
+                      marginTop: "4px",
+                      padding: "4px",
+                      border: "1px solid #ccc",
+                      borderRadius: "4px",
+                      fontSize: "0.9em",
+                    }}
                   />
                 )}
               </th>
@@ -209,6 +250,13 @@ const ExcelPreviewEditor = ({ parsedData, onCommit }) => {
                     onChange={(e) =>
                       handleCellChange(rIdx, cIdx, e.target.value)
                     }
+                    style={{
+                      width: "100%",
+                      padding: "4px",
+                      border: "1px solid #ccc",
+                      borderRadius: "4px",
+                      fontSize: "0.9em",
+                    }}
                   />
                 </td>
               ))}
@@ -216,7 +264,18 @@ const ExcelPreviewEditor = ({ parsedData, onCommit }) => {
           ))}
         </tbody>
       </table>
-      <button onClick={handleCommit}>Commit Upload</button>
+      <button
+        onClick={handleCommit}
+        style={{
+          padding: "8px 16px",
+          background: "#ffd700",
+          border: "none",
+          borderRadius: "8px",
+          cursor: "pointer",
+        }}
+      >
+        Commit Upload
+      </button>
     </div>
   );
 };
