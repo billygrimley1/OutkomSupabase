@@ -16,7 +16,12 @@
     "recharts": "2.15.1",
     "react-dropzone": "^14.3.5",
     "xlsx": "^0.18.5",
-    "@supabase/supabase-js": "2.48.0"
+    "@supabase/supabase-js": "2.48.0",
+    "@fullcalendar/react": "^6.1.7",
+    "@fullcalendar/daygrid": "^6.1.7",
+    "@fullcalendar/timegrid": "^6.1.7",
+    "@fullcalendar/interaction": "^6.1.7",
+    "@fullcalendar/list": "^6.1.7"
   },
   "scripts": {
     "start": "react-scripts start",

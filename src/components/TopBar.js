@@ -1,6 +1,13 @@
 // src/components/TopBar.js
 import React from "react";
-import { FaPlus, FaFilter, FaClone, FaSlidersH, FaEdit } from "react-icons/fa";
+import {
+  FaPlus,
+  FaFilter,
+  FaClone,
+  FaSlidersH,
+  FaEdit,
+  FaCalendarAlt,
+} from "react-icons/fa";
 import "../styles/TopBar.css";
 import { supabase } from "../utils/supabase";
 
@@ -11,11 +18,10 @@ const TopBar = ({
   onOpenFilterModal,
   onAddBoard,
   onEditBoard,
+  onOpenCalendar, // new prop for opening calendar modal
 }) => {
-  // NEW: Logout handler
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    // Optionally reload the page to reset client state
     window.location.reload();
   };
 
@@ -84,9 +90,11 @@ const TopBar = ({
                 <FaEdit /> Edit Board
               </button>
             )}
+            <button onClick={onOpenCalendar}>
+              <FaCalendarAlt /> Calendar
+            </button>
           </>
         )}
-        {/* NEW: Logout button */}
         <button onClick={handleLogout}>Logout</button>
       </div>
     </div>

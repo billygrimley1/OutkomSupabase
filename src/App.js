@@ -15,11 +15,15 @@ import AddTaskModal from "./components/AddTaskModal";
 import AddBoardModal from "./components/AddBoardModal";
 import FilterModal from "./components/FilterModal";
 import Login from "./components/Login";
-import ExcelUploader from "./components/ExcelUploader"; // Import ExcelUploader
+import ExcelUploader from "./components/ExcelUploader";
+import CalendarModal from "./components/CalendarModal";
 import { supabase } from "./utils/supabase";
 import "./styles/App.css";
 
 function App() {
+  // Session state for authentication
+  const [session, setSession] = useState(null);
+
   const [view, setView] = useState("workflows");
   const [showAddTaskModal, setShowAddTaskModal] = useState(false);
   const [showFilterModal, setShowFilterModal] = useState(false);
@@ -31,14 +35,12 @@ function App() {
     dueDateEnd: "",
   });
   const [tasksRefresh, setTasksRefresh] = useState(0);
-
-  // For board creation modals
   const [showAddBoardModal, setShowAddBoardModal] = useState(false);
   const [showEditBoardModal, setShowEditBoardModal] = useState(false);
   const [boardType, setBoardType] = useState("workflow");
+  const [showCalendarModal, setShowCalendarModal] = useState(false);
 
-  const [session, setSession] = useState(null);
-
+  // Get current session and subscribe to auth state changes.
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
@@ -57,7 +59,6 @@ function App() {
     return <Login onLogin={(session) => setSession(session)} />;
   }
 
-  // Custom handler for adding boards
   const handleAddBoard = () => {
     if (view === "workflows") {
       setView("boardConfig");
@@ -132,9 +133,13 @@ function App() {
           onOpenFilterModal={() => setShowFilterModal(true)}
           onAddBoard={handleAddBoard}
           onEditBoard={() => setShowEditBoardModal(true)}
+          onOpenCalendar={() => setShowCalendarModal(true)}
         />
         <div className="view-container">{renderView()}</div>
       </div>
+      {showCalendarModal && (
+        <CalendarModal onClose={() => setShowCalendarModal(false)} />
+      )}
       {showAddTaskModal && (
         <AddTaskModal
           onClose={() => setShowAddTaskModal(false)}
