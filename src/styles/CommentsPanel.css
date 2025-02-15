@@ -1,5 +1,4 @@
-/* src/styles/TaskCommentsPanel.css */
-
+/* Updated CommentsPanel.css */
 .task-comments-overlay {
   position: fixed;
   top: 0;
@@ -45,7 +44,7 @@
 .task-comments-header h3 {
   margin: 0;
   font-size: 1.2em;
-  color: #333;
+  color: #000;
 }
 
 .close-comments-button {
@@ -56,6 +55,7 @@
   cursor: pointer;
   font-size: 0.9em;
   transition: background 0.2s ease;
+  color: #000;
 }
 
 .close-comments-button:hover {
@@ -98,6 +98,7 @@
   cursor: pointer;
   font-size: 0.8em;
   transition: background 0.2s ease;
+  color: #000;
 }
 
 .task-comment-item button:hover {
@@ -126,6 +127,7 @@
   cursor: pointer;
   font-size: 0.9em;
   transition: background 0.2s ease;
+  color: #000;
 }
 
 .task-add-comment button:hover {
