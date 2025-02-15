@@ -1,0 +1,72 @@
+.customer-profile-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+  
+  .customer-profile {
+    background: #fff;
+    border-radius: 8px;
+    padding: 20px;
+    width: 90%;
+    max-width: 600px;
+    position: relative;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  }
+  
+  .close-profile {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: transparent;
+    border: none;
+    font-size: 1.5em;
+    cursor: pointer;
+  }
+  
+  .timeline {
+    margin-top: 20px;
+    border-left: 2px solid #ccc;
+    padding-left: 20px;
+  }
+  
+  .timeline-event {
+    margin-bottom: 15px;
+    position: relative;
+  }
+  
+  .timeline-event::before {
+    content: "";
+    position: absolute;
+    left: -11px;
+    top: 0;
+    width: 10px;
+    height: 10px;
+    background: #ffd700;
+    border: 2px solid #fff;
+    border-radius: 50%;
+  }
+  
+  .timeline-date {
+    font-size: 0.85em;
+    color: #888;
+    margin-bottom: 4px;
+  }
+  
+  .timeline-content h4 {
+    margin: 0 0 4px;
+    font-size: 1em;
+  }
+  
+  .timeline-content p {
+    margin: 0;
+    font-size: 0.9em;
+  }
+  

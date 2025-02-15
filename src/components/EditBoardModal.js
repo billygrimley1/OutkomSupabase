@@ -1,13 +1,13 @@
-// src/components/EditBoardModal.js
 import React, { useState } from "react";
-import "../styles/AddBoardModal.css"; // Reusing modal styles
+import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
+import "../styles/AddBoardModal.css"; // Reusing your modal styles
 import { supabase } from "../utils/supabase";
 
 const EditBoardModal = ({ board, onClose, onBoardUpdated, onBoardDeleted }) => {
   const [boardName, setBoardName] = useState(board.name);
   const [columns, setColumns] = useState(board.columns || []);
 
-  // Determine initial default and success column indices.
+  // Initialize default and success indices using board defaults
   const initialDefaultIndex = columns.findIndex(
     (col) => col.id === board.defaultColumn
   );
@@ -27,7 +27,6 @@ const EditBoardModal = ({ board, onClose, onBoardUpdated, onBoardDeleted }) => {
     setColumns(newCols);
   };
 
-  // Delete column handler – if the column exists in the DB, delete it; otherwise, just remove from state.
   const handleDeleteColumn = async (index) => {
     const col = columns[index];
     if (col.id) {
@@ -46,18 +45,40 @@ const EditBoardModal = ({ board, onClose, onBoardUpdated, onBoardDeleted }) => {
     if (successColumnIndex >= newCols.length) setSuccessColumnIndex(0);
   };
 
-  const moveColumnUp = (index) => {
-    if (index === 0) return;
-    const newCols = [...columns];
-    [newCols[index - 1], newCols[index]] = [newCols[index], newCols[index - 1]];
+  const onDragEnd = (result) => {
+    if (!result.destination) return;
+    const newCols = Array.from(columns);
+    const [moved] = newCols.splice(result.source.index, 1);
+    newCols.splice(result.destination.index, 0, moved);
     setColumns(newCols);
-  };
-
-  const moveColumnDown = (index) => {
-    if (index === columns.length - 1) return;
-    const newCols = [...columns];
-    [newCols[index], newCols[index + 1]] = [newCols[index + 1], newCols[index]];
-    setColumns(newCols);
+    // Update successColumnIndex
+    if (result.source.index === successColumnIndex) {
+      setSuccessColumnIndex(result.destination.index);
+    } else if (
+      result.source.index < successColumnIndex &&
+      result.destination.index >= successColumnIndex
+    ) {
+      setSuccessColumnIndex(successColumnIndex - 1);
+    } else if (
+      result.source.index > successColumnIndex &&
+      result.destination.index <= successColumnIndex
+    ) {
+      setSuccessColumnIndex(successColumnIndex + 1);
+    }
+    // Update defaultColumnIndex similarly
+    if (result.source.index === defaultColumnIndex) {
+      setDefaultColumnIndex(result.destination.index);
+    } else if (
+      result.source.index < defaultColumnIndex &&
+      result.destination.index >= defaultColumnIndex
+    ) {
+      setDefaultColumnIndex(defaultColumnIndex - 1);
+    } else if (
+      result.source.index > defaultColumnIndex &&
+      result.destination.index <= defaultColumnIndex
+    ) {
+      setDefaultColumnIndex(defaultColumnIndex + 1);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -147,32 +168,72 @@ const EditBoardModal = ({ board, onClose, onBoardUpdated, onBoardDeleted }) => {
           </label>
           <div className="columns-section">
             <h4>Columns</h4>
-            {columns.map((col, index) => (
-              <div key={index} className="column-item">
-                <label>
-                  Column Name:
-                  <input
-                    type="text"
-                    value={col.title}
-                    onChange={(e) =>
-                      handleColumnTitleChange(index, e.target.value)
-                    }
-                    required
-                  />
-                </label>
-                <div className="reorder-group">
-                  <button type="button" onClick={() => moveColumnUp(index)}>
-                    ↑
-                  </button>
-                  <button type="button" onClick={() => moveColumnDown(index)}>
-                    ↓
-                  </button>
-                </div>
-                <button type="button" onClick={() => handleDeleteColumn(index)}>
-                  Delete Column
-                </button>
-              </div>
-            ))}
+            <DragDropContext onDragEnd={onDragEnd}>
+              <Droppable droppableId="columns" direction="vertical">
+                {(provided) => (
+                  <div ref={provided.innerRef} {...provided.droppableProps}>
+                    {columns.map((col, index) => (
+                      <Draggable
+                        key={col.id ? col.id.toString() : `temp-${index}`}
+                        draggableId={
+                          col.id ? col.id.toString() : `temp-${index}`
+                        }
+                        index={index}
+                      >
+                        {(provided) => (
+                          <div
+                            className="column-item"
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            {...provided.dragHandleProps}
+                          >
+                            <label>
+                              Column Name:
+                              <input
+                                type="text"
+                                value={col.title}
+                                onChange={(e) =>
+                                  handleColumnTitleChange(index, e.target.value)
+                                }
+                                required
+                              />
+                            </label>
+                            <div className="radio-group">
+                              <label>
+                                <input
+                                  type="radio"
+                                  name={`success-${board.id}`}
+                                  checked={index === successColumnIndex}
+                                  onChange={() => setSuccessColumnIndex(index)}
+                                />
+                                Success
+                              </label>
+                              <label>
+                                <input
+                                  type="radio"
+                                  name={`default-${board.id}`}
+                                  checked={index === defaultColumnIndex}
+                                  onChange={() => setDefaultColumnIndex(index)}
+                                />
+                                Default
+                              </label>
+                            </div>
+                            <button
+                              type="button"
+                              className="remove-column-btn"
+                              onClick={() => handleDeleteColumn(index)}
+                            >
+                              Delete Column
+                            </button>
+                          </div>
+                        )}
+                      </Draggable>
+                    ))}
+                    {provided.placeholder}
+                  </div>
+                )}
+              </Droppable>
+            </DragDropContext>
             <button
               type="button"
               onClick={() => setColumns([...columns, { title: "New Column" }])}
