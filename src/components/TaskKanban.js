@@ -1,4 +1,3 @@
-// src/components/TaskKanban.js
 import React, { useState, useEffect } from "react";
 import { DragDropContext, Droppable } from "react-beautiful-dnd";
 import TaskCard from "./TaskCard";
@@ -14,14 +13,15 @@ const TaskKanban = ({
   showFilterModal,
   setShowFilterModal,
   tasksRefresh,
+  setFilterCriteria, // in case needed for FilterModal callback
 }) => {
   const [kanbanBoard, setKanbanBoard] = useState(null);
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [showCompleted, setShowCompleted] = useState(true);
 
   // Fetch tasks and build board state.
   useEffect(() => {
-    // Build the initial columns from the board's columns or default columns.
     const initialColumns =
       board && board.columns
         ? board.columns.reduce((acc, col) => {
@@ -47,22 +47,17 @@ const TaskKanban = ({
           };
 
     async function fetchTasks() {
-      // Start with a base query.
       let query = supabase.from("tasks").select();
 
-      // Filter by board id.
       if (board && board.id) {
         query = query.eq("board_id", board.id);
       }
 
-      // Apply filtering based on filterCriteria.
       if (filterCriteria) {
         if (filterCriteria.tags && filterCriteria.tags.length > 0) {
-          // Assumes tasks.tags is stored as an array.
           query = query.contains("tags", filterCriteria.tags);
         }
         if (filterCriteria.assignedTo && filterCriteria.assignedTo.length > 0) {
-          // Assumes tasks.assigned_to contains the assigned user's id or name.
           query = query.in("assigned_to", filterCriteria.assignedTo);
         }
         if (filterCriteria.priority && filterCriteria.priority.length > 0) {
@@ -80,7 +75,6 @@ const TaskKanban = ({
       if (error) {
         console.error("Error fetching tasks:", error.message);
       } else if (data) {
-        // Build a new board structure with the fetched tasks.
         const newBoard = {
           id: board ? board.id : "board-1",
           name: board ? board.name : "Task Board",
@@ -88,23 +82,54 @@ const TaskKanban = ({
           tasks: {},
         };
         data.forEach((task) => {
+          // If the task is in the completed column and completed tasks are hidden, skip it.
+          if (
+            board &&
+            board.successColumn &&
+            !showCompleted &&
+            task.status.toString() === board.successColumn.toString()
+          ) {
+            return;
+          }
           newBoard.tasks[task.id] = task;
-          const columnKey =
-            task.status && initialColumns[task.status]
-              ? task.status
-              : board && board.defaultColumn
-              ? board.defaultColumn
-              : Object.keys(initialColumns)[0];
-          newBoard.columns[columnKey].cardIds.push(String(task.id));
+          let colId = task.status;
+          if (!colId && board && board.defaultColumn) {
+            colId = board.defaultColumn;
+          }
+          if (!colId) {
+            colId = Object.keys(initialColumns)[0];
+          }
+          if (newBoard.columns[colId]) {
+            newBoard.columns[colId].cardIds.push(String(task.id));
+          }
         });
         setKanbanBoard(newBoard);
       }
     }
-    // Add filterCriteria to the dependency array so that changes trigger a re-fetch.
     fetchTasks();
-  }, [board, filterCriteria, showTemplateModal, tasksRefresh]);
+  }, [board, filterCriteria, showTemplateModal, tasksRefresh, showCompleted]);
 
-  // updateTask: update local board state with an updated task.
+  const getColumnsWithCards = () => {
+    const boardTasks = Object.values(kanbanBoard.tasks);
+    const colMap = {};
+    Object.keys(kanbanBoard.columns).forEach((colKey) => {
+      colMap[Number(colKey)] = [];
+    });
+    boardTasks.forEach((task) => {
+      let colId = task.status;
+      if (!colId && board && board.defaultColumn) {
+        colId = board.defaultColumn;
+      }
+      if (colId) {
+        colId = Number(colId);
+        if (colMap[colId]) {
+          colMap[colId].push(task);
+        }
+      }
+    });
+    return colMap;
+  };
+
   const updateTask = (updatedTask) => {
     setKanbanBoard((prevBoard) => {
       if (!prevBoard) return prevBoard;
@@ -115,7 +140,6 @@ const TaskKanban = ({
     });
   };
 
-  // deleteTask: remove the task from local state and delete it from the DB.
   const deleteTask = async (taskId) => {
     setKanbanBoard((prevBoard) => {
       if (!prevBoard) return prevBoard;
@@ -143,7 +167,6 @@ const TaskKanban = ({
     }
   };
 
-  // onDragEnd: update local state and then update the DB.
   const onDragEnd = (result) => {
     const { destination, source, draggableId } = result;
     if (!destination) return;
@@ -209,13 +232,33 @@ const TaskKanban = ({
 
   return (
     <div className="kanban-container">
+      <div className="kanban-filters">
+        <label>
+          <input
+            type="checkbox"
+            checked={showCompleted}
+            onChange={(e) => setShowCompleted(e.target.checked)}
+          />
+          Show Completed Tasks
+        </label>
+      </div>
       {showConfetti && <ReactConfetti numberOfPieces={200} />}
       <DragDropContext onDragEnd={onDragEnd}>
         <div className="kanban-board">
           {Object.keys(kanbanBoard.columns).map((colKey) => {
             const column = kanbanBoard.columns[colKey];
+            let cards = getColumnsWithCards()[Number(colKey)] || [];
+            // If this column is designated as the completed column and completed tasks are hidden, clear its tasks.
+            if (
+              board &&
+              board.successColumn &&
+              board.successColumn.toString() === colKey.toString() &&
+              !showCompleted
+            ) {
+              cards = [];
+            }
             return (
-              <Droppable key={column.id} droppableId={column.id}>
+              <Droppable key={column.id} droppableId={String(column.id)}>
                 {(provided) => (
                   <div
                     className="kanban-column"
@@ -226,21 +269,21 @@ const TaskKanban = ({
                       <h3>{column.title}</h3>
                     </div>
                     <div className="card-list">
-                      {column.cardIds.map((taskId, index) => {
-                        const task = kanbanBoard.tasks[taskId];
-                        return (
-                          task && (
-                            <TaskCard
-                              key={task.id}
-                              task={task}
-                              index={index}
-                              updateTask={updateTask}
-                              deleteTask={deleteTask}
-                              isCompletedColumn={false} // Adjust as needed
-                            />
-                          )
-                        );
-                      })}
+                      {cards.map((card, index) => (
+                        <TaskCard
+                          key={card.id}
+                          task={card}
+                          index={index}
+                          updateTask={updateTask}
+                          deleteTask={deleteTask}
+                          isCompletedColumn={
+                            board &&
+                            board.successColumn &&
+                            board.successColumn.toString() ===
+                              column.id.toString()
+                          }
+                        />
+                      ))}
                       {provided.placeholder}
                     </div>
                   </div>
@@ -295,7 +338,7 @@ const TaskKanban = ({
         <FilterModal
           initialFilters={filterCriteria}
           onApply={(filters) => {
-            setKanbanBoard(null); // Optional: Clear board to show loading state
+            setKanbanBoard(null);
             setFilterCriteria(filters);
             setShowFilterModal(false);
           }}

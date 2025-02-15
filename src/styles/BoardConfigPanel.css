@@ -19,7 +19,7 @@
 .config-form {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 15px;
+  gap: 20px; /* increased gap for clearer separation */
 }
 
 .config-form label {
@@ -75,6 +75,8 @@
   border: 1px solid #ccc;
   padding: 10px;
   border-radius: 8px;
+  /* Optionally add margin-bottom if needed:
+     margin-bottom: 10px; */
 }
 
 /* Radio group */
@@ -115,18 +117,18 @@
   background: #e6c200;
 }
 
-/* Remove column button */
+/* Remove column button - refined for a smaller, subtler look */
 .remove-column-btn {
-  padding: 8px;
+  padding: 4px 8px; /* reduced padding */
   background: #ff4d4d;
   color: #fff;
   border: none;
   border-radius: 8px;
   cursor: pointer;
-  font-size: 1em;
+  font-size: 0.9em; /* slightly smaller font */
   transition: background 0.2s ease;
-  width: 100%;
-  margin-top: 10px;
+  /* Remove width: 100% to allow a more compact button */
+  margin-top: 6px; /* reduced margin */
 }
 
 .remove-column-btn:hover {

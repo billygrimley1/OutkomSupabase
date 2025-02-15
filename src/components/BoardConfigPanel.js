@@ -1,6 +1,6 @@
-// src/components/BoardConfigPanel.js
 import React, { useState, useEffect } from "react";
 import { supabase } from "../utils/supabase";
+import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import "../styles/BoardConfigPanel.css";
 
 const BoardConfigPanel = ({ onBack }) => {
@@ -27,7 +27,7 @@ const BoardConfigPanel = ({ onBack }) => {
     fetchBoards();
   }, []);
 
-  // When a board is selected, fetch its columns (ordered by position).
+  // When a board is selected, fetch its columns ordered by position.
   useEffect(() => {
     async function fetchColumns() {
       if (selectedBoard) {
@@ -46,7 +46,6 @@ const BoardConfigPanel = ({ onBack }) => {
     fetchColumns();
   }, [selectedBoard]);
 
-  // Board management handlers
   const handleAddBoard = async () => {
     const boardName = prompt("Enter new board name:");
     if (!boardName) return;
@@ -55,16 +54,15 @@ const BoardConfigPanel = ({ onBack }) => {
       .insert({ name: boardName, board_type: "workflow" })
       .select();
     if (error) {
-      console.error("Error adding board:", error.message);
       alert("Error adding board: " + error.message);
       return;
     }
     const newBoard = data[0];
     // Insert default columns for the new board.
     const defaultColumns = [
-      { title: "Column 1", is_success: false, is_failure: false },
-      { title: "Column 2", is_success: true, is_failure: false },
-      { title: "Column 3", is_success: false, is_failure: true },
+      { title: "Column 1", is_success: false },
+      { title: "Column 2", is_success: true },
+      { title: "Column 3", is_success: false },
     ];
     for (let i = 0; i < defaultColumns.length; i++) {
       const col = defaultColumns[i];
@@ -72,12 +70,10 @@ const BoardConfigPanel = ({ onBack }) => {
         board_id: newBoard.id,
         title: col.title,
         is_success: col.is_success,
-        is_failure: col.is_failure,
         position: i,
       });
-      if (colError) {
+      if (colError)
         console.error("Error inserting default column:", colError.message);
-      }
     }
     const { data: boardsData, error: boardsError } = await supabase
       .from("boards")
@@ -95,7 +91,6 @@ const BoardConfigPanel = ({ onBack }) => {
     if (!window.confirm("Are you sure you want to remove this board?")) return;
     const { error } = await supabase.from("boards").delete().eq("id", boardId);
     if (error) {
-      console.error("Error removing board:", error.message);
       alert("Error removing board: " + error.message);
       return;
     }
@@ -109,13 +104,11 @@ const BoardConfigPanel = ({ onBack }) => {
     }
   };
 
-  // Column management handlers
   const handleAddColumn = () => {
     const newColumn = {
       board_id: selectedBoard.id,
       title: "New Column",
       is_success: false,
-      is_failure: false,
       position: columns.length,
     };
     setColumns([...columns, newColumn]);
@@ -133,47 +126,24 @@ const BoardConfigPanel = ({ onBack }) => {
     setColumns(newCols);
   };
 
-  const handleToggleSuccess = (index) => {
-    // Set exactly one success column.
-    const newCols = columns.map((col, i) => ({
-      ...col,
-      is_success: i === index,
-    }));
-    setColumns(newCols);
-  };
-
-  const handleToggleFailure = (index) => {
-    // Set exactly one failure column.
-    const newCols = columns.map((col, i) => ({
-      ...col,
-      is_failure: i === index,
-    }));
-    setColumns(newCols);
-  };
-
-  const handleReorder = (fromIndex, toIndex) => {
-    const newCols = [...columns];
-    const [removed] = newCols.splice(fromIndex, 1);
-    newCols.splice(toIndex, 0, removed);
+  // Drag and drop handler for reordering columns.
+  const onDragEnd = (result) => {
+    if (!result.destination) return;
+    const newCols = Array.from(columns);
+    const [removed] = newCols.splice(result.source.index, 1);
+    newCols.splice(result.destination.index, 0, removed);
     newCols.forEach((col, i) => (col.position = i));
     setColumns(newCols);
   };
 
-  const handleSave = async () => {
-    // Validate that exactly one success and one failure column exist.
-    const successCount = columns.filter((col) => col.is_success).length;
-    const failureCount = columns.filter((col) => col.is_failure).length;
-    if (successCount !== 1 || failureCount !== 1) {
-      alert("Each board must have exactly one success and one failure column.");
-      return;
-    }
-    // Save each column: update if existing; insert if new.
+  const handleSave = async (e) => {
+    e.preventDefault();
+    // Save each column: update if it exists; insert if new.
     for (let i = 0; i < columns.length; i++) {
       const col = columns[i];
       const updateData = {
         title: col.title,
         is_success: col.is_success,
-        is_failure: col.is_failure,
         position: i,
       };
       if (col.id) {
@@ -182,7 +152,6 @@ const BoardConfigPanel = ({ onBack }) => {
           .update(updateData)
           .eq("id", col.id);
         if (error) {
-          console.error("Error updating column:", error.message);
           alert("Error updating column: " + error.message);
           return;
         }
@@ -192,105 +161,109 @@ const BoardConfigPanel = ({ onBack }) => {
           .insert({ ...updateData, board_id: selectedBoard.id })
           .select();
         if (error) {
-          console.error("Error inserting column:", error.message);
           alert("Error inserting column: " + error.message);
           return;
         }
-        columns[i] = data[0];
       }
     }
     alert("Board configuration saved.");
   };
 
   return (
-    <div className="board-config-container">
-      <h2>Configure Workflow Board</h2>
-      <div className="config-form">
-        <label>
-          Select Board:
-          <select
-            value={selectedBoard ? selectedBoard.id : ""}
-            onChange={(e) => {
-              const boardId = e.target.value;
-              const board = boards.find((b) => b.id.toString() === boardId);
-              setSelectedBoard(board);
-            }}
-          >
-            {boards.map((board) => (
-              <option key={board.id} value={board.id}>
-                {board.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <div className="board-buttons">
-          <button onClick={handleAddBoard}>Add Board</button>
-          {selectedBoard && (
-            <button onClick={() => handleRemoveBoard(selectedBoard.id)}>
-              Remove Board
+    <div className="modal-overlay">
+      <div className="modal">
+        <h3>Configure Workflow Board</h3>
+        <form onSubmit={handleSave}>
+          <label>
+            Select Board:
+            <select
+              value={selectedBoard ? selectedBoard.id : ""}
+              onChange={(e) => {
+                const boardId = e.target.value;
+                const board = boards.find((b) => b.id.toString() === boardId);
+                setSelectedBoard(board);
+              }}
+            >
+              {boards.map((board) => (
+                <option key={board.id} value={board.id}>
+                  {board.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <div className="board-buttons">
+            <button type="button" onClick={handleAddBoard}>
+              Add Board
             </button>
-          )}
-        </div>
-      </div>
-      {selectedBoard && (
-        <div className="config-form">
-          {columns.map((col, index) => (
-            <div key={col.id || index} className="config-column">
-              <label>
-                Column Name:
-                <input
-                  type="text"
-                  value={col.title}
-                  onChange={(e) =>
-                    handleColumnTitleChange(index, e.target.value)
-                  }
-                />
-              </label>
-              <div className="radio-group">
-                <label>
-                  <input
-                    type="radio"
-                    name={`success-${selectedBoard.id}`}
-                    checked={col.is_success}
-                    onChange={() => handleToggleSuccess(index)}
-                  />
-                  Success
-                </label>
-                <label>
-                  <input
-                    type="radio"
-                    name={`failure-${selectedBoard.id}`}
-                    checked={col.is_failure}
-                    onChange={() => handleToggleFailure(index)}
-                  />
-                  Failure
-                </label>
-              </div>
-              <div className="reorder-group">
-                <button onClick={() => handleReorder(index, index - 1)}>
-                  ↑
-                </button>
-                <button onClick={() => handleReorder(index, index + 1)}>
-                  ↓
-                </button>
-              </div>
+            {selectedBoard && (
               <button
-                className="remove-column-btn"
-                onClick={() => handleRemoveColumn(index)}
+                type="button"
+                onClick={() => handleRemoveBoard(selectedBoard.id)}
               >
-                Remove Column
+                Remove Board
               </button>
-            </div>
-          ))}
-          <div className="config-form-buttons">
-            <button onClick={handleAddColumn}>Add Column</button>
-            <button onClick={handleSave}>Save Configuration</button>
+            )}
           </div>
-        </div>
-      )}
-      <button className="back-button" onClick={onBack}>
-        Back to Kanban
-      </button>
+          <div className="columns-section">
+            <h4>Columns</h4>
+            <DragDropContext onDragEnd={onDragEnd}>
+              <Droppable droppableId="columns" direction="vertical">
+                {(provided) => (
+                  <div ref={provided.innerRef} {...provided.droppableProps}>
+                    {columns.map((col, index) => (
+                      <Draggable
+                        key={col.id ? col.id.toString() : `temp-${index}`}
+                        draggableId={
+                          col.id ? col.id.toString() : `temp-${index}`
+                        }
+                        index={index}
+                      >
+                        {(provided) => (
+                          <div
+                            className="column-item"
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            {...provided.dragHandleProps}
+                          >
+                            <label>
+                              Column Name:
+                              <input
+                                type="text"
+                                value={col.title}
+                                onChange={(e) =>
+                                  handleColumnTitleChange(index, e.target.value)
+                                }
+                                required
+                              />
+                            </label>
+                            <button
+                              type="button"
+                              className="remove-column-btn"
+                              onClick={() => handleRemoveColumn(index)}
+                            >
+                              Delete Column
+                            </button>
+                          </div>
+                        )}
+                      </Draggable>
+                    ))}
+                    {provided.placeholder}
+                  </div>
+                )}
+              </Droppable>
+            </DragDropContext>
+            <button type="button" onClick={handleAddColumn}>
+              Add Column
+            </button>
+          </div>
+          <div className="config-form-buttons">
+            <button type="submit">Save Configuration</button>
+            <button type="button" onClick={onBack}>
+              Back to Kanban
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 };
