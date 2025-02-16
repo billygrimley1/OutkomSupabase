@@ -1,6 +1,7 @@
 import React from "react";
 import NotificationsCenter from "./NotificationsCenter";
 import NotificationSettings from "./NotificationSettings";
+import { supabase } from "../../utils/supabase"; // ✅ Ensure Supabase import
 
 const NotificationsPage = ({ setNotificationTriggers }) => {
   const handleSettingsSave = (triggers) => {
