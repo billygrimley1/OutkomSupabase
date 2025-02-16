@@ -27,27 +27,40 @@ const AddTaskModal = ({ onClose, onTaskAdded }) => {
     relatedCustomer: "",
     tags: "",
     topPriority: false,
-    status: "Not started",
-    boardId: "", // New field for selecting board
+    status: null, // Initially null; will be set once the board is fetched
+    boardId: "", // For selecting board
   });
   const [subtasks, setSubtasks] = useState([]);
   const [newSubtask, setNewSubtask] = useState("");
   const [boards, setBoards] = useState([]);
 
-  // Fetch available task boards from the database.
+  // Fetch available task boards (with board_columns) from the database.
   useEffect(() => {
     async function fetchBoards() {
       const { data, error } = await supabase
         .from("boards")
-        .select()
+        .select("*, board_columns(*)")
         .eq("board_type", "task");
       if (error) {
         console.error("Error fetching boards:", error.message);
       } else if (data) {
-        setBoards(data);
-        // Default to the first board if none is selected.
-        if (data.length > 0 && !formData.boardId) {
-          setFormData((prev) => ({ ...prev, boardId: data[0].id.toString() }));
+        // Map boards to include sorted board_columns and a defaultColumn property.
+        const mappedBoards = data.map((board) => {
+          const columns = board.board_columns
+            ? board.board_columns.sort((a, b) => a.position - b.position)
+            : [];
+          const defaultColumn = columns.length > 0 ? columns[0].id : null;
+          return { ...board, columns, defaultColumn };
+        });
+        setBoards(mappedBoards);
+        // Default to the first board if none is selected,
+        // and set the new task's status to that board's default column.
+        if (mappedBoards.length > 0 && !formData.boardId) {
+          setFormData((prev) => ({
+            ...prev,
+            boardId: mappedBoards[0].id.toString(),
+            status: mappedBoards[0].defaultColumn,
+          }));
         }
       }
     }
@@ -98,6 +111,7 @@ const AddTaskModal = ({ onClose, onTaskAdded }) => {
             .filter(Boolean)
         : [],
       subtasks: subtasks,
+      // Use the status value from formData (which should now be the board's default column ID)
       status: formData.status,
       board_id: formData.boardId ? parseInt(formData.boardId, 10) : null,
       created_at: new Date().toISOString(),
@@ -197,7 +211,7 @@ const AddTaskModal = ({ onClose, onTaskAdded }) => {
               onChange={handleChange}
             />
           </label>
-          {/* New board selection drop-down */}
+          {/* Board selection */}
           <label>
             Board:
             <select
@@ -243,12 +257,10 @@ const AddTaskModal = ({ onClose, onTaskAdded }) => {
               </ul>
             )}
           </div>
-          <div className="modal-buttons">
-            <button type="submit">Add Task</button>
-            <button type="button" onClick={onClose}>
-              Cancel
-            </button>
-          </div>
+          <button type="submit">Add Task</button>
+          <button type="button" onClick={onClose}>
+            Cancel
+          </button>
         </form>
       </div>
     </div>
