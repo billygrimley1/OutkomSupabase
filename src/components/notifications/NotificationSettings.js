@@ -18,52 +18,42 @@ const NotificationSettings = ({ onSave }) => {
   const [emailSettings, setEmailSettings] = useState(defaultEmailSettings);
   const [saveStatus, setSaveStatus] = useState({ loading: false, error: null });
 
-  // Fetch user settings from Supabase
   useEffect(() => {
     const fetchSettings = async () => {
       try {
-        const { data: sessionData } = await supabase.auth.getSession();
-        if (!sessionData.session) {
-          console.warn("No active session found.");
-          return;
-        }
+        const {
+          data: { session },
+          error: sessionError,
+        } = await supabase.auth.getSession();
+        if (sessionError) throw sessionError;
+        if (!session) throw new Error("User session not found");
 
         const { data, error } = await supabase
           .from("user_settings")
           .select("*")
-          .eq("user_id", sessionData.session.user.id)
+          .eq("user_id", session.user.id)
           .single();
 
-        if (error && error.code !== "PGRST116") {
-          console.error("Error fetching settings:", error);
-          return;
-        }
+        if (error && error.code !== "PGRST116") throw error;
 
         if (data) {
           setTriggers(data.notification_triggers || defaultTriggers);
-          setEmailSettings({
-            dailyDigest: data.email_settings?.dailyDigest ?? true,
-            instantNotifications:
-              data.email_settings?.instantNotifications ?? true,
-            emailAddress: data.email_settings?.emailAddress ?? "",
-          });
+          setEmailSettings(data.email_settings || defaultEmailSettings);
         }
       } catch (error) {
-        console.error("Unexpected error fetching settings:", error);
+        console.error("❌ Error fetching settings:", error.message);
       }
     };
 
     fetchSettings();
   }, []);
 
-  // Handle checkbox toggles for triggers
   const handleToggle = (type) => {
     setTriggers((prev) =>
       prev.map((t) => (t.type === type ? { ...t, enabled: !t.enabled } : t))
     );
   };
 
-  // Handle changes in email settings
   const handleEmailChange = (e) => {
     const { name, value, type, checked } = e.target;
     setEmailSettings((prev) => ({
@@ -72,35 +62,47 @@ const NotificationSettings = ({ onSave }) => {
     }));
   };
 
-  // Handle saving settings to Supabase
   const handleSave = async () => {
     setSaveStatus({ loading: true, error: null });
 
     try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (!sessionData.session) {
-        throw new Error("Not authenticated");
-      }
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
+      if (sessionError) throw sessionError;
+      if (!session) throw new Error("User session not found");
 
-      const { error } = await supabase.from("user_settings").upsert({
-        user_id: sessionData.session.user.id,
-        notification_triggers: triggers,
-        email_settings: emailSettings,
-      });
+      console.log(
+        "🔍 Debug: Attempting to save settings for user:",
+        session.user.id
+      );
+
+      const { data, error } = await supabase
+        .from("user_settings")
+        .upsert([
+          {
+            user_id: session.user.id,
+            notification_triggers: triggers,
+            email_settings: emailSettings,
+          },
+        ])
+        .select();
 
       if (error) {
-        console.error("📌 Supabase Error:", error);
-        throw new Error("Failed to save settings. Please try again.");
+        console.error("❌ Error saving settings:", error);
+        throw error;
       }
 
+      console.log("✅ Saved settings:", data);
       setSaveStatus({ loading: false, error: null });
       if (onSave) onSave(triggers);
-      alert("✅ Settings saved successfully!");
+      alert("Settings saved successfully!");
     } catch (error) {
-      console.error("📌 Detailed Error Info:", error);
+      console.error("❌ Save error:", error.message);
       setSaveStatus({
         loading: false,
-        error: error.message || "Failed to save settings. Please try again.",
+        error: "Failed to save settings. Please try again.",
       });
     }
   };
@@ -117,6 +119,7 @@ const NotificationSettings = ({ onSave }) => {
       }}
     >
       <h2>Notification Settings</h2>
+
       <ul style={{ listStyle: "none", padding: 0 }}>
         {triggers.map((trigger) => (
           <li key={trigger.type} style={{ marginBottom: "10px" }}>
@@ -161,7 +164,7 @@ const NotificationSettings = ({ onSave }) => {
           <input
             type="email"
             name="emailAddress"
-            value={emailSettings.emailAddress || ""}
+            value={emailSettings.emailAddress}
             onChange={handleEmailChange}
             style={{
               width: "100%",
@@ -188,7 +191,6 @@ const NotificationSettings = ({ onSave }) => {
       >
         {saveStatus.loading ? "Saving..." : "Save Settings"}
       </button>
-
       {saveStatus.error && (
         <div style={{ color: "red", marginTop: "10px" }}>
           {saveStatus.error}
