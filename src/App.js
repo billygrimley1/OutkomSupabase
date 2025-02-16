@@ -17,13 +17,16 @@ import FilterModal from "./components/FilterModal";
 import Login from "./components/Login";
 import ExcelUploader from "./components/ExcelUploader";
 import CalendarModal from "./components/CalendarModal";
+import NotificationsPage from "./components/notifications/NotificationsPage";
+import NotificationToaster from "./components/notifications/NotificationToaster";
 import { supabase } from "./utils/supabase";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import "./styles/App.css";
 
 function App() {
   // Session state for authentication
   const [session, setSession] = useState(null);
-
   const [view, setView] = useState("workflows");
   const [showAddTaskModal, setShowAddTaskModal] = useState(false);
   const [showFilterModal, setShowFilterModal] = useState(false);
@@ -39,8 +42,15 @@ function App() {
   const [showEditBoardModal, setShowEditBoardModal] = useState(false);
   const [boardType, setBoardType] = useState("workflow");
   const [showCalendarModal, setShowCalendarModal] = useState(false);
+  const [notificationTriggers, setNotificationTriggers] = useState(() => {
+    const saved = localStorage.getItem("notification_triggers");
+    if (saved) {
+      const triggers = JSON.parse(saved);
+      return triggers.filter((t) => t.enabled).map((t) => t.type);
+    }
+    return ["task_due_soon", "task_completed", "customer_high_risk"];
+  });
 
-  // Get current session and subscribe to auth state changes.
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
@@ -117,6 +127,12 @@ function App() {
             />
           </div>
         );
+      case "notifications":
+        return (
+          <NotificationsPage
+            setNotificationTriggers={setNotificationTriggers}
+          />
+        );
       default:
         return <WorkflowKanban />;
     }
@@ -134,6 +150,7 @@ function App() {
           onAddBoard={handleAddBoard}
           onEditBoard={() => setShowEditBoardModal(true)}
           onOpenCalendar={() => setShowCalendarModal(true)}
+          onOpenNotifications={() => setView("notifications")}
         />
         <div className="view-container">{renderView()}</div>
       </div>
@@ -168,6 +185,8 @@ function App() {
           }}
         />
       )}
+      <NotificationToaster enabledTriggers={notificationTriggers} />
+      <ToastContainer />
     </div>
   );
 }

@@ -1,4 +1,3 @@
-// src/components/LeftNav.js
 import React from "react";
 import {
   FaProjectDiagram,
@@ -8,6 +7,7 @@ import {
   FaCogs,
   FaSlidersH,
   FaTable,
+  FaBell,
 } from "react-icons/fa";
 import "../styles/LeftNav.css";
 
@@ -68,6 +68,12 @@ const LeftNav = ({ setView, currentView }) => {
           onClick={() => setView("reports")}
         >
           <FaChartBar /> Reports
+        </li>
+        <li
+          className={currentView === "notifications" ? "active" : ""}
+          onClick={() => setView("notifications")}
+        >
+          <FaBell /> Notifications
         </li>
       </ul>
     </div>

@@ -21,7 +21,8 @@
     "@fullcalendar/daygrid": "^6.1.7",
     "@fullcalendar/timegrid": "^6.1.7",
     "@fullcalendar/interaction": "^6.1.7",
-    "@fullcalendar/list": "^6.1.7"
+    "@fullcalendar/list": "^6.1.7",
+    "react-toastify": "^9.1.1"
   },
   "scripts": {
     "start": "react-scripts start",
