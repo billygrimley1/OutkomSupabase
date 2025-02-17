@@ -1,6 +1,70 @@
+/* Combined Reports Dashboard CSS */
+
+/* Dashboard container */
 .reports-dashboard {
   padding: 20px;
 }
+
+/* Headings inside dashboard */
+.reports-dashboard h2,
+.reports-dashboard h3,
+.reports-dashboard h4 {
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+.reports-dashboard h2 {
+  margin-bottom: 30px;
+}
+
+.reports-dashboard h3 {
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+/* Metrics grid inside dashboard */
+.reports-dashboard .metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+  margin-top: 2rem;
+  margin-bottom: 30px;
+}
+
+/* Metric card inside dashboard */
+.reports-dashboard .metric-card {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+/* Metric value styling */
+.reports-dashboard .metric-value {
+  font-size: 24px;
+  font-weight: bold;
+  color: #8884d8;
+}
+
+/* Charts grid inside dashboard */
+.reports-dashboard .charts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 30px;
+  margin-top: 20px;
+}
+
+/* Chart container styling inside dashboard */
+.reports-dashboard .chart-container {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
+}
+
+/* Global fallback definitions (if used outside .reports-dashboard) */
 
 .metrics-grid {
   display: grid;

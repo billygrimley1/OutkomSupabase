@@ -84,12 +84,18 @@ const Records = () => {
 
   // Handle sorting when a column header is clicked.
   const handleSort = (column) => {
-    if (sortColumn === column) {
-      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
-    } else {
-      setSortColumn(column);
-      setSortDirection("asc");
-    }
+    const newDirection =
+      sortColumn === column && sortDirection === "asc" ? "desc" : "asc";
+    setSortColumn(column);
+    setSortDirection(newDirection);
+
+    const sorted = [...customers].sort((a, b) => {
+      const aVal = a[column] ?? "";
+      const bVal = b[column] ?? "";
+      const modifier = newDirection === "asc" ? 1 : -1;
+      return aVal < bVal ? -modifier : aVal > bVal ? modifier : 0;
+    });
+    setCustomers(sorted);
   };
 
   // Inline editing handlers.

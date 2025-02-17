@@ -18,13 +18,15 @@ const ExcelUploader = ({ onDataParsed }) => {
         setProgress(0);
 
         const reader = new FileReader();
-        reader.onprogress = (e) => {
+
+        const handleProgress = (e) => {
           if (e.lengthComputable) {
             const percent = Math.round((e.loaded / e.total) * 100);
             setProgress(percent);
           }
         };
-        reader.onload = (e) => {
+
+        const handleLoad = (e) => {
           try {
             const data = new Uint8Array(e.target.result);
             const workbook = XLSX.read(data, { type: "array" });
@@ -40,12 +42,24 @@ const ExcelUploader = ({ onDataParsed }) => {
           }
           setLoading(false);
         };
-        reader.onerror = (err) => {
+
+        const handleError = (err) => {
           console.error("Error reading file:", err);
           setError("Error reading file. Please try again.");
           setLoading(false);
         };
+
+        reader.addEventListener("progress", handleProgress);
+        reader.addEventListener("load", handleLoad);
+        reader.addEventListener("error", handleError);
+
         reader.readAsArrayBuffer(file);
+
+        return () => {
+          reader.removeEventListener("progress", handleProgress);
+          reader.removeEventListener("load", handleLoad);
+          reader.removeEventListener("error", handleError);
+        };
       }
     },
     [onDataParsed]

@@ -27,6 +27,7 @@ const CustomerForm = () => {
   const [selectedBoards, setSelectedBoards] = useState([]);
   const [showUploader, setShowUploader] = useState(false);
   const [excelPreviewData, setExcelPreviewData] = useState(null);
+  const [error, setError] = useState(null); // Added error state
 
   // Load custom fields from localStorage (if available)
   useEffect(() => {
@@ -68,9 +69,23 @@ const CustomerForm = () => {
     );
   };
 
+  // Validation function
+  const validateForm = (data) => {
+    if (!data.name) return "Name is required";
+    if (!data.mainContactEmail) return "Email is required";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.mainContactEmail))
+      return "Invalid email format";
+    return null;
+  };
+
   // Manual form submission handler (for single customer entry)
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const validationError = validateForm(formData);
+    if (validationError) {
+      setError(validationError); // Set error state
+      return;
+    }
     const newCustomer = {
       name: formData.name,
       arr: parseFloat(formData.ARR),
@@ -122,6 +137,7 @@ const CustomerForm = () => {
         riskStatus: "",
       });
       setSelectedBoards([]);
+      setError(null); // Clear error state
     }
   };
 
@@ -168,7 +184,7 @@ const CustomerForm = () => {
   return (
     <div className="customer-form-container">
       <h2>Add New Customer</h2>
-
+      {error && <p style={{ color: "red" }}>{error}</p>} {/* Display error */}
       {/* Toggle button for Excel Uploader */}
       <button
         onClick={toggleUploader}
@@ -184,14 +200,12 @@ const CustomerForm = () => {
       >
         {showUploader ? "Hide Excel Uploader" : "Upload via Excel"}
       </button>
-
       {/* Render ExcelUploader if toggled and no preview data */}
       {showUploader && !excelPreviewData && (
         <div className="excel-uploader-container">
           <ExcelUploader onDataParsed={handleExcelData} />
         </div>
       )}
-
       {/* Render ExcelPreviewEditor if Excel data has been parsed */}
       {excelPreviewData && (
         <div className="excel-preview-container">
@@ -201,7 +215,6 @@ const CustomerForm = () => {
           />
         </div>
       )}
-
       {/* Manual Customer Form */}
       <form onSubmit={handleSubmit}>
         <label>
@@ -299,6 +312,7 @@ const CustomerForm = () => {
             name="mainContactEmail"
             value={formData.mainContactEmail}
             onChange={handleChange}
+            required
           />
         </label>
         <label>
