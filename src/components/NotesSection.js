@@ -1,90 +1,138 @@
 // src/components/NotesSection.js
 import React, { useState, useEffect } from "react";
+import { supabase } from "../utils/supabase";
 import NotesGroup from "./NotesGroup";
 import "../styles/NotesSection.css";
 
-// Key used for localStorage persistence
-const NOTES_STORAGE_KEY = "notesGroups";
-
 const NotesSection = () => {
-  // Load from localStorage if available, otherwise use a default group.
-  const [groups, setGroups] = useState(() => {
-    const stored = localStorage.getItem(NOTES_STORAGE_KEY);
-    if (stored) {
-      try {
-        return JSON.parse(stored);
-      } catch (err) {
-        console.error("Error parsing stored notes groups:", err);
+  const [groups, setGroups] = useState([]);
+
+  useEffect(() => {
+    fetchNotes();
+    // Optionally, set up a real-time listener here.
+  }, []);
+
+  // Fetch all notes for the current user from Supabase.
+  const fetchNotes = async () => {
+    const { data, error } = await supabase
+      .from("notes")
+      .select("*")
+      .order("created_at", { ascending: true });
+    if (error) {
+      console.error("Error fetching notes:", error);
+    } else {
+      setGroups(groupNotesByGroup(data));
+    }
+  };
+
+  // Group notes by the "note_group" property.
+  const groupNotesByGroup = (notes) => {
+    const groupsMap = {};
+    notes.forEach((note) => {
+      const groupName = note.note_group || "General";
+      if (!groupsMap[groupName]) {
+        groupsMap[groupName] = {
+          note_group: groupName,
+          notes: [],
+        };
+      }
+      groupsMap[groupName].notes.push(note);
+    });
+    return Object.values(groupsMap);
+  };
+
+  // Insert a new note into Supabase.
+  const addNote = async (groupName, note) => {
+    // Use the new getUser method for Supabase v2
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      console.error("User not authenticated");
+      return;
+    }
+    const { error } = await supabase.from("notes").insert([
+      {
+        user_id: user.id,
+        note_group: groupName,
+        title: note.title,
+        body: note.body,
+        bg_color: note.bg_color,
+      },
+    ]);
+    if (error) {
+      console.error("Error adding note:", error);
+    } else {
+      fetchNotes();
+    }
+  };
+
+  // Update an existing note.
+  const updateNote = async (noteId, updatedNote) => {
+    const { error } = await supabase
+      .from("notes")
+      .update({
+        title: updatedNote.title,
+        body: updatedNote.body,
+        bg_color: updatedNote.bg_color,
+      })
+      .eq("id", noteId);
+    if (error) {
+      console.error("Error updating note:", error);
+    } else {
+      fetchNotes();
+    }
+  };
+
+  // Delete a note.
+  const removeNote = async (noteId) => {
+    const { error } = await supabase.from("notes").delete().eq("id", noteId);
+    if (error) {
+      console.error("Error deleting note:", error);
+    } else {
+      fetchNotes();
+    }
+  };
+
+  // Update a group title by updating all notes that belong to the group.
+  const updateGroupTitle = async (oldGroupName, newGroupName) => {
+    const { error } = await supabase
+      .from("notes")
+      .update({ note_group: newGroupName })
+      .eq("note_group", oldGroupName);
+    if (error) {
+      console.error("Error updating group title:", error);
+    } else {
+      fetchNotes();
+    }
+  };
+
+  // Remove a group by deleting all notes in that group.
+  const removeGroup = async (groupName) => {
+    if (
+      window.confirm(
+        `Are you sure you want to delete the entire "${groupName}" group?`
+      )
+    ) {
+      const { error } = await supabase
+        .from("notes")
+        .delete()
+        .eq("note_group", groupName);
+      if (error) {
+        console.error("Error deleting group:", error);
+      } else {
+        fetchNotes();
       }
     }
-    return [{ id: Date.now(), title: "General", notes: [] }];
-  });
+  };
 
-  // Whenever groups change, persist them to localStorage.
-  useEffect(() => {
-    localStorage.setItem(NOTES_STORAGE_KEY, JSON.stringify(groups));
-  }, [groups]);
-
+  // Handler for adding a new group (locally) - notes can be added later.
   const addGroup = () => {
-    const title = prompt("Enter group heading:");
-    if (title) {
-      const newGroup = { id: Date.now(), title, notes: [] };
-      setGroups([...groups, newGroup]);
+    const groupName = prompt("Enter group heading:");
+    if (groupName) {
+      // Add an empty group locally. It won't be persisted until a note is added.
+      setGroups((prev) => [...prev, { note_group: groupName, notes: [] }]);
     }
-  };
-
-  const removeGroup = (groupId) => {
-    if (window.confirm("Delete this note group?")) {
-      setGroups(groups.filter((group) => group.id !== groupId));
-    }
-  };
-
-  const updateGroupTitle = (groupId, newTitle) => {
-    setGroups(
-      groups.map((group) =>
-        group.id === groupId ? { ...group, title: newTitle } : group
-      )
-    );
-  };
-
-  const addNote = (groupId, note) => {
-    setGroups(
-      groups.map((group) =>
-        group.id === groupId
-          ? { ...group, notes: [...(group.notes || []), note] }
-          : group
-      )
-    );
-  };
-
-  const removeNote = (groupId, noteId) => {
-    setGroups(
-      groups.map((group) =>
-        group.id === groupId
-          ? {
-              ...group,
-              notes: (group.notes || []).filter(
-                (note) => note && note.id !== noteId
-              ),
-            }
-          : group
-      )
-    );
-  };
-
-  const updateNote = (groupId, noteId, updatedNote) => {
-    setGroups(
-      groups.map((group) =>
-        group.id === groupId
-          ? {
-              ...group,
-              notes: (group.notes || []).map((note) =>
-                note && note.id === noteId ? updatedNote : note
-              ),
-            }
-          : group
-      )
-    );
   };
 
   return (
@@ -93,16 +141,16 @@ const NotesSection = () => {
       <div className="notes-groups">
         {groups.map((group) => (
           <NotesGroup
-            key={group.id}
+            key={group.note_group}
             group={group}
-            onRemoveGroup={() => removeGroup(group.id)}
+            onRemoveGroup={() => removeGroup(group.note_group)}
             onUpdateGroupTitle={(newTitle) =>
-              updateGroupTitle(group.id, newTitle)
+              updateGroupTitle(group.note_group, newTitle)
             }
-            onAddNote={(note) => addNote(group.id, note)}
-            onRemoveNote={(noteId) => removeNote(group.id, noteId)}
+            onAddNote={(note) => addNote(group.note_group, note)}
+            onRemoveNote={(noteId) => removeNote(noteId)}
             onUpdateNote={(noteId, updatedNote) =>
-              updateNote(group.id, noteId, updatedNote)
+              updateNote(noteId, updatedNote)
             }
           />
         ))}

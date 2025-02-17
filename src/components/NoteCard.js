@@ -2,12 +2,9 @@
 import React, { useState } from "react";
 
 const NoteCard = ({ note, onRemove, onUpdate }) => {
-  // Guard against an undefined or invalid note object.
   if (!note || typeof note !== "object") return null;
 
-  // Destructure with default values
   const { title = "", body = "", bg_color = "#ffffff" } = note;
-
   const [isEditing, setIsEditing] = useState(false);
   const [noteTitle, setNoteTitle] = useState(title);
   const [noteBody, setNoteBody] = useState(body);
