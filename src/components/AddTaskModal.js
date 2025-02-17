@@ -27,8 +27,8 @@ const AddTaskModal = ({ onClose, onTaskAdded }) => {
     relatedCustomer: "",
     tags: "",
     topPriority: false,
-    status: null, // Initially null; will be set once the board is fetched
-    boardId: "", // For selecting board
+    status: "", // Will store the board column id as a string
+    boardId: "",
   });
   const [subtasks, setSubtasks] = useState([]);
   const [newSubtask, setNewSubtask] = useState("");
@@ -44,28 +44,54 @@ const AddTaskModal = ({ onClose, onTaskAdded }) => {
       if (error) {
         console.error("Error fetching boards:", error.message);
       } else if (data) {
-        // Map boards to include sorted board_columns and a defaultColumn property.
+        // For each board, sort its columns by position
         const mappedBoards = data.map((board) => {
           const columns = board.board_columns
             ? board.board_columns.sort((a, b) => a.position - b.position)
             : [];
-          const defaultColumn = columns.length > 0 ? columns[0].id : null;
-          return { ...board, columns, defaultColumn };
+          // Use the first column in the sorted list as the default
+          const defaultColumn = columns.length > 0 ? columns[0] : null;
+          return {
+            ...board,
+            columns,
+            defaultColumn: defaultColumn ? defaultColumn.id : null,
+          };
         });
         setBoards(mappedBoards);
-        // Default to the first board if none is selected,
-        // and set the new task's status to that board's default column.
+        // If no board has been selected yet, use the first board
         if (mappedBoards.length > 0 && !formData.boardId) {
           setFormData((prev) => ({
             ...prev,
             boardId: mappedBoards[0].id.toString(),
-            status: mappedBoards[0].defaultColumn,
           }));
         }
       }
     }
     fetchBoards();
   }, [formData.boardId]);
+
+  // When boardId or boards changes, update the default status from the selected board's columns.
+  useEffect(() => {
+    if (formData.boardId && boards.length > 0) {
+      const selectedBoard = boards.find(
+        (b) => b.id.toString() === formData.boardId
+      );
+      if (
+        selectedBoard &&
+        selectedBoard.columns &&
+        selectedBoard.columns.length > 0
+      ) {
+        // Sort columns by position and choose the first one
+        const sortedColumns = [...selectedBoard.columns].sort(
+          (a, b) => a.position - b.position
+        );
+        setFormData((prev) => ({
+          ...prev,
+          status: sortedColumns[0].id.toString(), // Ensure status is a string
+        }));
+      }
+    }
+  }, [formData.boardId, boards]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -111,8 +137,8 @@ const AddTaskModal = ({ onClose, onTaskAdded }) => {
             .filter(Boolean)
         : [],
       subtasks: subtasks,
-      // Use the status value from formData (which should now be the board's default column ID)
-      status: formData.status,
+      // Ensure status is stored as a string (it should already be set correctly by the effect)
+      status: formData.status.toString(),
       board_id: formData.boardId ? parseInt(formData.boardId, 10) : null,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
@@ -126,12 +152,7 @@ const AddTaskModal = ({ onClose, onTaskAdded }) => {
       return;
     }
     if (taskData && Array.isArray(taskData) && taskData.length > 0) {
-      const insertedTask = taskData[0];
-      if (onTaskAdded) {
-        onTaskAdded(insertedTask);
-      }
-    } else {
-      console.warn("No task data returned from insert.");
+      onTaskAdded(taskData[0]);
     }
     onClose();
   };
