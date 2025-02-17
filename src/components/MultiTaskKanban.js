@@ -1,7 +1,9 @@
+// src/components/MultiTaskKanban.js
 import React, { useState, useEffect, useCallback } from "react";
 import TaskKanban from "./TaskKanban";
 import AddBoardModal from "./AddBoardModal";
 import EditBoardModal from "./EditBoardModal";
+import NotesSection from "./NotesSection"; // Import the new notes section
 import { supabase } from "../utils/supabase";
 import "../styles/MultiTaskKanban.css";
 
@@ -30,7 +32,6 @@ const MultiTaskKanban = ({
     if (error) {
       console.error("Error fetching boards:", error.message);
     } else if (data) {
-      // For each board, sort its columns by position and assign default/success values.
       const mappedBoards = data.map((board) => {
         const columns = board.board_columns
           ? board.board_columns.sort((a, b) => a.position - b.position)
@@ -56,7 +57,6 @@ const MultiTaskKanban = ({
 
   return (
     <div className="multi-kanban-container">
-      {/* Render board tabs for selecting a board */}
       <div className="board-tabs">
         {boards.map((board) => (
           <div
@@ -72,13 +72,17 @@ const MultiTaskKanban = ({
       </div>
 
       {selectedBoard ? (
-        <TaskKanban
-          board={selectedBoard}
-          filterCriteria={filterCriteria}
-          showFilterModal={showFilterModal}
-          setShowFilterModal={setShowFilterModal}
-          tasksRefresh={tasksRefresh}
-        />
+        <>
+          <TaskKanban
+            board={selectedBoard}
+            filterCriteria={filterCriteria}
+            showFilterModal={showFilterModal}
+            setShowFilterModal={setShowFilterModal}
+            tasksRefresh={tasksRefresh}
+          />
+          {/* Render the notes section underneath the task kanban */}
+          <NotesSection />
+        </>
       ) : (
         <p>No board selected. Please add a board.</p>
       )}
