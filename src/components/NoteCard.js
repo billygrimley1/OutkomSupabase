@@ -2,62 +2,27 @@
 import React, { useState } from "react";
 
 const NoteCard = ({ note, onRemove, onUpdate }) => {
+  // Always call hooks at the top level.
+  // If note.isSpecial is truthy, initialize specialValue to "special", otherwise an empty string.
+  const [specialValue, setSpecialValue] = useState(
+    note && note.isSpecial ? "special" : ""
+  );
+
+  // If note is not provided or is not an object, render nothing.
   if (!note || typeof note !== "object") return null;
 
-  const { title = "", body = "", bg_color = "#ffffff" } = note;
-  const [isEditing, setIsEditing] = useState(false);
-  const [noteTitle, setNoteTitle] = useState(title);
-  const [noteBody, setNoteBody] = useState(body);
-  const [bgColor, setBgColor] = useState(bg_color);
-
-  const handleSave = () => {
-    setIsEditing(false);
-    if (onUpdate) {
-      onUpdate({
-        ...note,
-        title: noteTitle,
-        body: noteBody,
-        bg_color: bgColor,
-      });
-    }
-  };
-
   return (
-    <div className="note-card" style={{ backgroundColor: bgColor }}>
-      {isEditing ? (
-        <div className="note-edit-form">
-          <input
-            type="text"
-            value={noteTitle}
-            onChange={(e) => setNoteTitle(e.target.value)}
-            placeholder="Title"
-          />
-          <textarea
-            value={noteBody}
-            onChange={(e) => setNoteBody(e.target.value)}
-            placeholder="Body text"
-          />
-          <div className="color-picker">
-            <label>
-              Background:
-              <input
-                type="color"
-                value={bgColor}
-                onChange={(e) => setBgColor(e.target.value)}
-              />
-            </label>
-          </div>
-          <button onClick={handleSave}>Save</button>
+    <div className="note-card">
+      {note.isSpecial ? (
+        <div>
+          <p>Special Note: {note.content}</p>
+          <p>Special Value: {specialValue}</p>
         </div>
       ) : (
-        <div className="note-display" onDoubleClick={() => setIsEditing(true)}>
-          <h4>{noteTitle}</h4>
-          <p>{noteBody}</p>
-        </div>
+        <div>{note.content}</div>
       )}
-      <button className="remove-note" onClick={onRemove}>
-        &times;
-      </button>
+      {onRemove && <button onClick={onRemove}>Remove</button>}
+      {onUpdate && <button onClick={() => onUpdate(note)}>Update</button>}
     </div>
   );
 };
