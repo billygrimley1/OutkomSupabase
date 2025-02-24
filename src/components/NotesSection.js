@@ -1,4 +1,3 @@
-// src/components/NotesSection.js
 import React, { useState, useEffect } from "react";
 import { supabase } from "../utils/supabase";
 import NotesGroup from "./NotesGroup";
@@ -6,6 +5,7 @@ import "../styles/NotesSection.css";
 
 const NotesSection = () => {
   const [groups, setGroups] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     fetchNotes();
@@ -138,22 +138,56 @@ const NotesSection = () => {
   return (
     <div className="notes-section">
       <h2>Notes</h2>
+      <input
+        type="text"
+        placeholder="Search notes..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        className="search-input"
+      />
       <div className="notes-groups">
-        {groups.map((group) => (
-          <NotesGroup
-            key={group.note_group}
-            group={group}
-            onRemoveGroup={() => removeGroup(group.note_group)}
-            onUpdateGroupTitle={(newTitle) =>
-              updateGroupTitle(group.note_group, newTitle)
-            }
-            onAddNote={(note) => addNote(group.note_group, note)}
-            onRemoveNote={(noteId) => removeNote(noteId)}
-            onUpdateNote={(noteId, updatedNote) =>
-              updateNote(noteId, updatedNote)
-            }
-          />
-        ))}
+        {groups.map((group) => {
+          // Check if the group name includes the search term.
+          const groupMatches = group.note_group
+            .toLowerCase()
+            .includes(searchTerm.toLowerCase());
+
+          // Filter the notes in this group based on title or body.
+          const filteredNotes = group.notes.filter((note) => {
+            const noteTitleMatch = note.title
+              .toLowerCase()
+              .includes(searchTerm.toLowerCase());
+            const noteBodyMatch = note.body
+              .toLowerCase()
+              .includes(searchTerm.toLowerCase());
+            return noteTitleMatch || noteBodyMatch;
+          });
+
+          // If there's a search term and neither the group name nor any note matches, skip this group.
+          if (searchTerm && !groupMatches && filteredNotes.length === 0) {
+            return null;
+          }
+
+          return (
+            <NotesGroup
+              key={group.note_group}
+              group={{
+                ...group,
+                // If a search term is active, show only matching notes.
+                notes: searchTerm ? filteredNotes : group.notes,
+              }}
+              onRemoveGroup={() => removeGroup(group.note_group)}
+              onUpdateGroupTitle={(newTitle) =>
+                updateGroupTitle(group.note_group, newTitle)
+              }
+              onAddNote={(note) => addNote(group.note_group, note)}
+              onRemoveNote={(noteId) => removeNote(noteId)}
+              onUpdateNote={(noteId, updatedNote) =>
+                updateNote(noteId, updatedNote)
+              }
+            />
+          );
+        })}
         <div className="add-group">
           <button onClick={addGroup}>+ Add Group</button>
         </div>
